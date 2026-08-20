@@ -7,6 +7,6 @@ import java.util.List;
 
 public interface ArmorStandMetadataHandler {
 
-    List<EntityData> metadata(Component name, boolean small, boolean glow);
+    List<EntityData<?>> metadata(Component name, boolean small, boolean glow);
 
 }

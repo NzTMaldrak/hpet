@@ -10,7 +10,8 @@ Join Discord to receive fast support post sale or plugin information pre sale! [
 <br>
 ## Install HPET
 You can install HPET following these steps:
-- Download and install [ProtocolLib](https://www.spigotmc.org/resources/protocollib.1997/), accordingly to your Minecraft server version
+- Run Paper 26.2 with Java 25
+- Download and install [PacketEvents 2.13.0 or newer](https://github.com/retrooper/packetevents/releases)
 - Download HPET plugin from [SpigotMC](https://www.spigotmc.org/resources/⭕%EF%B8%8F1-8-1-20-x⭕%EF%B8%8Fhpet✏%EF%B8%8Fpacket-based-pets-and-cosmetics-⭕%EF%B8%8F.93891/)
 - Upload the HPET.jar file into your server's plugins folder
 - Restart your server
@@ -41,7 +42,7 @@ Pets can also have **other attributes**, which are the following:<br><br>
 **distance**, used to calculate the radius of the pet location relative to the player, default is 1.<br>
 **price**, requires [Vault](https://www.spigotmc.org/resources/vault.34315/) to be installed. Allows users to unlock Pets using economy. By default pets are not buyable.<br>
 **level**, allows to setup a level type and value, which allows the Pet to level up based on certain factors. See [Pet levelling](#Pet-levelling).<br>
-**particle**, only for 1.9+, allows to set the default Pet particle which can be enabled by levelling or by command. By default it is SNOWBALL Here is a list of valid [Particle types in 1.20](https://hub.spigotmc.org/javadocs/spigot/org/bukkit/Particle.html).<br>
+**particle** allows you to set the default Pet particle which can be enabled by levelling or by command. By default it is SNOWBALL. See the [Paper 26.2 Particle API](https://jd.papermc.io/paper/26.2/org/bukkit/Particle.html).<br>
 **group**, since HPET 4.3+, Players can select multiple pets at same time but only one for each group. This allows to group pets by behaviour, notice that this does not have any graphic/aesthetic effect and should not be confused with GUI groups. Default group is "default".<br>
 **visible**, boolean (true|false), defines the default Pet visibility. By default it is true.<br>
 **balloon**, boolean (true|false), attach the pet to the player with a lead, so it looks like you're holding a balloon<br>

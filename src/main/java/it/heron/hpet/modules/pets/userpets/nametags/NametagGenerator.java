@@ -1,7 +1,6 @@
 package it.heron.hpet.modules.pets.userpets.nametags;
 
 import it.heron.hpet.main.PetPlugin;
-import it.heron.hpet.main.utils.ProtocolVersionRetriever;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
@@ -17,8 +16,6 @@ public class NametagGenerator {
     private static boolean areNametagsEnabled() {
         return PetPlugin.getInstance().getConfig().getBoolean("nametags.enable", true);
     }
-
-    private static final int MINIMUM_DISPLAY_PROTOCOL_VERSION = 762;
 
     public static INametag getFormattedNametag(String text) {
         INametag nametag = getNametag(Component.text(text)); // do some formatting based on config
@@ -36,12 +33,7 @@ public class NametagGenerator {
         if(!ENABLE_NAMETAGS) {
             return new NoNametag();
         }
-        int protocolVersion = ProtocolVersionRetriever.PROTOCOL_VERSION; // example value
-        if(protocolVersion >= MINIMUM_DISPLAY_PROTOCOL_VERSION) {
-            return new DisplayNametag(text);
-        } else {
-            return new ArmorstandNametag(text);
-        }
+        return new DisplayNametag(text);
 
     }
 

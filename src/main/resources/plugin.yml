@@ -2,7 +2,7 @@ name: HPET
 version: '${version}'
 main: it.heron.hpet.main.PetPlugin
 depend: [packetevents]
-api-version: 1.20
+api-version: '26.2'
 description: 'The packet based pet plugin'
 softdepend: [PlaceholderAPI, HeadDatabase, Vault, SuperVanish, PremiumVanish, CMI, MythicMobs, ItemsAdder, ModelEngine, HeadDB]
 permissions:
@@ -10,5 +10,3 @@ permissions:
     default: true
   pet.command:
     default: true
-libraries:
-  - org.mariadb.jdbc:mariadb-java-client:3.1.4
