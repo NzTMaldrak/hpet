@@ -14,7 +14,15 @@ public class StackUserPet extends HandUserPet {
     @Override
     protected void switchStack() {
         CanHaveItemOnHead entity = (CanHaveItemOnHead) this.fakeEntity;
-        entity.setHeadItem(nextStack());
+        entity.setHeadItem(currentStack());
+    }
+
+    @Override
+    protected org.bukkit.Location getNametagLocation(org.bukkit.Location petLocation) {
+        double verticalScaleCompensation = (getVisualScale() - 1d) * 2d;
+        return petLocation.clone()
+                .add(0, getPetType().getNameHeight() + 1d + verticalScaleCompensation, 0)
+                .add(getPetType().getNametagRelativeLocation());
     }
 
 }
