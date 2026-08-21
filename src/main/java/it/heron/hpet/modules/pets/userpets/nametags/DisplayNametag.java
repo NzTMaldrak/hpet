@@ -23,6 +23,11 @@ public class DisplayNametag extends AbstractNametag {
     }
 
     @Override
+    public Location getLocation() {
+        return textDisplay.getLocation();
+    }
+
+    @Override
     public void teleport(Location location) {
         textDisplay.teleport(location, false);
     }
@@ -30,5 +35,15 @@ public class DisplayNametag extends AbstractNametag {
     @Override
     public boolean isShown() {
         return textDisplay != null && textDisplay.isSpawned();
+    }
+
+    @Override
+    public void show(Location location) {
+        if (!isShown()) textDisplay.spawn(location);
+    }
+
+    @Override
+    public void hide() {
+        if (isShown()) textDisplay.despawn();
     }
 }

@@ -15,6 +15,11 @@ public class NoNametag implements INametag {
     }
 
     @Override
+    public Location getLocation() {
+        return null;
+    }
+
+    @Override
     public void teleport(Location location) {
     }
 
@@ -24,7 +29,7 @@ public class NoNametag implements INametag {
     }
 
     @Override
-    public void show() {
+    public void show(Location location) {
 
     }
 

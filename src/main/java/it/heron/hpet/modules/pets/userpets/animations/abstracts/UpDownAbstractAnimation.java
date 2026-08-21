@@ -20,7 +20,7 @@ public abstract class UpDownAbstractAnimation extends AbstractAnimation {
      */
     @Override
     protected int runEvery() {
-        return 3;
+        return 1;
     }
 
     /**

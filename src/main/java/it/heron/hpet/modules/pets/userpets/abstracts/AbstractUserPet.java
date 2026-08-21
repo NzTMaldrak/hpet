@@ -15,10 +15,14 @@ import org.bukkit.entity.Entity;
 import org.bukkit.util.Vector;
 
 import java.util.UUID;
+import it.heron.hpet.modules.pets.userpets.animations.*;
+import java.util.Locale;
 
 public abstract class AbstractUserPet implements UserPet {
 
     private static final int UNSPAWNED_ID = -1;
+    private static final int MOVEMENT_INTERVAL_TICKS = 2;
+    private static final float ORIGINAL_BASE_YAW = 200f;
 
     @Getter
     protected Location location;
@@ -42,18 +46,24 @@ public abstract class AbstractUserPet implements UserPet {
     protected INametag nametag;
 
     private boolean currentVisibilityState = true; // current visibility state, shouldn't be used externally
+    private int movementTicks = 0;
 
     public AbstractUserPet(@NonNull PetType petType, @NonNull Entity owner, int level) {
         this.petType = petType;
         this.owner = owner.getUniqueId();
         this.level = level;
-        this.nametag = NametagGenerator.getFormattedNametag(getPetType().getName());
+        net.kyori.adventure.text.Component displayName = getPetType().getDisplayName();
+        if (displayName == null) displayName = net.kyori.adventure.text.Component.text(getPetType().getName());
+        this.nametag = NametagGenerator.getFormattedNametag(displayName, level, owner.getName());
+        this.animation = createAnimation(petType.getAnimationName());
+        this.location = positionFromOwner(owner.getLocation(), new Vector());
     }
 
     @Override
     public void teleport(Location location) {
         if(!currentVisibilityState) return;
-        if(this.location.equals(location)) return;
+        if(location == null) return;
+        this.location = location.clone();
     }
 
     @Override
@@ -64,8 +74,8 @@ public abstract class AbstractUserPet implements UserPet {
     @Override
     public void spawn() {
         if(isSpawned()) despawn();
-        nametag.show();
         onSpawn();
+        nametag.show(getNametagLocation(location));
         if(this.id == UNSPAWNED_ID) throw new RuntimeException("There was an error while spawning the Pet");
     }
 
@@ -80,11 +90,16 @@ public abstract class AbstractUserPet implements UserPet {
     @Override
     public void tick() {
         Entity ownerEntity = Bukkit.getEntity(this.owner);
+        if (ownerEntity == null || !ownerEntity.isValid()) return;
         InvisibilityHandler handler = (InvisibilityHandler) PetPlugin.getInstance().getModulesHandler().moduleByName("Vanish");
         this.vanished = handler.isInvisible(ownerEntity);
 
         applyVisibilityState(!this.vanished && this.visible);
-        teleport(getNextLocation());
+        movementTicks++;
+        if (movementTicks >= MOVEMENT_INTERVAL_TICKS) {
+            movementTicks = 0;
+            teleport(getNextLocation());
+        }
 
         if(petType.getAbility() != null) {
             petType.getAbility().execute(this);
@@ -93,7 +108,9 @@ public abstract class AbstractUserPet implements UserPet {
 
     @Override
     public void rename(String name) {
-        NametagGenerator.changeNametagFormatted(nametag, name);
+        Entity ownerEntity = Bukkit.getEntity(owner);
+        NametagGenerator.changeNametagFormatted(nametag, name, level,
+                ownerEntity == null ? "" : ownerEntity.getName());
     }
 
     @Override
@@ -105,8 +122,37 @@ public abstract class AbstractUserPet implements UserPet {
     protected Location getNextLocation() {
         animation.nextStep();
         Location ownerLocation = Bukkit.getEntity(owner).getLocation();
-        Vector relativeLocation = animation.relativeLocation(ownerLocation);
-        return this.location.clone().add(relativeLocation);
+        return positionFromOwner(ownerLocation, animation.relativeLocation(ownerLocation));
+    }
+
+    private Location positionFromOwner(Location ownerLocation, Vector animationOffset) {
+        Vector relativeLocation = petType.getRelativeLocation().clone().add(animationOffset);
+        Location next = ownerLocation.clone().add(relativeLocation);
+        float globalCalibration = (float) PetPlugin.getInstance().getConfig()
+                .getDouble("fix.yawCalibration", 0d);
+        next.setYaw(ownerLocation.getYaw() + ORIGINAL_BASE_YAW + petType.getYaw() + globalCalibration);
+        return next;
+    }
+
+    protected Location getNametagLocation(Location petLocation) {
+        return petLocation.clone()
+                .add(0, petType.getNameHeight(), 0)
+                .add(petType.getNametagRelativeLocation());
+    }
+
+    private IAnimation createAnimation(String animationName) {
+        String name = animationName == null ? "follow" : animationName.toLowerCase(Locale.ROOT);
+        return switch (name) {
+            case "bounce" -> new BounceAnimation();
+            case "glide" -> new GlideAnimation();
+            case "slow_glide" -> new SlowGlideAnimation();
+            case "glitch" -> new GlitchAnimation();
+            case "side" -> new SideAnimation();
+            case "walk" -> new WalkAnimation();
+            case "follow" -> new FollowAnimation();
+            case "none" -> new NoAnimation();
+            default -> new GlideAnimation();
+        };
     }
 
     private void applyVisibilityState(boolean state) {
@@ -122,5 +168,13 @@ public abstract class AbstractUserPet implements UserPet {
 
     protected abstract void onSpawn();
     protected abstract void onDespawn();
+
+    public static int movementIntervalTicks() {
+        return MOVEMENT_INTERVAL_TICKS;
+    }
+
+    public static float originalBaseYaw() {
+        return ORIGINAL_BASE_YAW;
+    }
 
 }

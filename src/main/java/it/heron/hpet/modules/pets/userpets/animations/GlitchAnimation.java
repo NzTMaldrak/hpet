@@ -2,14 +2,14 @@ package it.heron.hpet.modules.pets.userpets.animations;
 
 import it.heron.hpet.modules.pets.userpets.animations.abstracts.UpDownAbstractAnimation;
 
-public class BounceAnimation extends UpDownAbstractAnimation {
+public final class GlitchAnimation extends UpDownAbstractAnimation {
     @Override
     protected float[] heightModifiers() {
-        return new float[]{0.2f, 0.35f, 0.6f, 0.7f, 0.75f, 0.8f, 0.8f, 0.75f, 0.7f, 0.6f, 0.35f};
+        return new float[]{0.2f, 0.5f, 0.3f, 0.8f, 0.3f, 0.5f, 0.8f, 0.4f};
     }
 
     @Override
     public String name() {
-        return "bounce";
+        return "glitch";
     }
 }

@@ -12,6 +12,7 @@ public interface FakeEntity {
 
     int getId();
     UUID getUuid();
+    Location getLocation();
 
     void spawn(Location location);
     void despawn();

@@ -14,7 +14,9 @@ public class UserPetsWorkload implements ScheduledWorkload {
 
     @Override
     public void compute() {
-        this.userPet.tick();
+        if (shouldBeRescheduled()) {
+            this.userPet.tick();
+        }
     }
 
     @Override

@@ -1,6 +1,8 @@
 package it.heron.hpet.modules.pets.userpets.fakeentities;
 
 import com.github.retrooper.packetevents.PacketEvents;
+import com.github.retrooper.packetevents.wrapper.PacketWrapper;
+import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerBundle;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerDestroyEntities;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerEntityTeleport;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerSpawnEntity;
@@ -23,6 +25,9 @@ public abstract class AbstractFakeEntity implements FakeEntity {
 
     protected World spawnedWorld = null;
 
+    @Getter
+    protected Location location = null;
+
     @Override
     public boolean isSpawned() {
         return this.spawnedWorld != null;
@@ -42,6 +47,7 @@ public abstract class AbstractFakeEntity implements FakeEntity {
         );
         sendPacketInWorld(location.getWorld(), packet);
         this.spawnedWorld = location.getWorld();
+        this.location = location.clone();
         onSpawn();
     }
 
@@ -51,6 +57,7 @@ public abstract class AbstractFakeEntity implements FakeEntity {
         WrapperPlayServerDestroyEntities packet = new WrapperPlayServerDestroyEntities(this.id);
         sendPacketInWorld(this.spawnedWorld, packet);
         this.spawnedWorld = null;
+        this.location = null;
         onDespawn();
     }
 
@@ -63,13 +70,27 @@ public abstract class AbstractFakeEntity implements FakeEntity {
         }
         WrapperPlayServerEntityTeleport packet = new WrapperPlayServerEntityTeleport(this.id, convertedLocation(location), onGround);
         sendPacket(packet);
+        this.location = location.clone();
     }
 
-    protected void sendPacket(Object packet) {
+    protected void sendPacket(PacketWrapper<?> packet) {
         sendPacketInWorld(this.spawnedWorld, packet);
     }
 
-    private void sendPacketInWorld(World world, Object packet) {
+    /**
+     * Opens or closes a vanilla clientbound packet bundle. Calling this immediately before and
+     * after the pet and nametag teleports makes the client apply both entity positions together.
+     */
+    public static void sendBundleDelimiter(World world) {
+        sendPacketToWorld(world, new WrapperPlayServerBundle());
+    }
+
+    private void sendPacketInWorld(World world, PacketWrapper<?> packet) {
+        sendPacketToWorld(world, packet);
+    }
+
+    private static void sendPacketToWorld(World world, PacketWrapper<?> packet) {
+        if (world == null || packet == null) return;
         for(Player player : world.getPlayers()) {
             PacketEvents.getAPI().getPlayerManager().sendPacket(player, packet);
         }

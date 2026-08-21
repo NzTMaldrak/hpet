@@ -10,12 +10,4 @@ public abstract @AllArgsConstructor class AbstractNametag implements INametag {
         // do validation
     }
 
-    public void show() {
-        if(isShown()) return;
-    }
-
-    public void hide() {
-        if(!isShown()) return;
-    }
-
 }

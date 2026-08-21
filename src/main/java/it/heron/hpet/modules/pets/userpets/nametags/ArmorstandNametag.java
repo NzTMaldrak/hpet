@@ -23,12 +23,27 @@ public class ArmorstandNametag extends AbstractNametag {
     }
 
     @Override
+    public Location getLocation() {
+        return fakeArmorstand.getLocation();
+    }
+
+    @Override
     public void teleport(Location location) {
-        fakeArmorstand.teleport(location.clone().add(0,-1,0), false);
+        fakeArmorstand.teleport(location, false);
     }
 
     @Override
     public boolean isShown() {
         return fakeArmorstand != null && fakeArmorstand.isSpawned();
+    }
+
+    @Override
+    public void show(Location location) {
+        if (!isShown()) fakeArmorstand.spawn(location);
+    }
+
+    @Override
+    public void hide() {
+        if (isShown()) fakeArmorstand.despawn();
     }
 }

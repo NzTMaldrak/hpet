@@ -48,6 +48,7 @@ public class FakeTextDisplay extends AbstractFakeEntity implements CanHaveItemOn
 
     private void updateText() {
         List<EntityData<?>> entityData = Arrays.asList(
+                new EntityData<>(15, EntityDataTypes.BYTE, (byte) 3),
                 new EntityData<>(23, EntityDataTypes.ADV_COMPONENT, text)
         );
         WrapperPlayServerEntityMetadata packet = new WrapperPlayServerEntityMetadata(this.id, entityData);

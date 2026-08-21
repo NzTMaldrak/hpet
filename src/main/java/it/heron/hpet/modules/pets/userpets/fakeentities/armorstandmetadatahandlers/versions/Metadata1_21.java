@@ -39,7 +39,7 @@ public class Metadata1_21 extends AbstractMetadataHandler {
 
     @Override
     protected EntityData armData() {
-        return new EntityData(18, EntityDataTypes.ROTATION, armPose());
+        return new EntityData(19, EntityDataTypes.ROTATION, armPose());
     }
 
     @Override
