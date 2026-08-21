@@ -9,8 +9,6 @@
 
 package it.heron.hpet.main;
 
-import io.github.jwdeveloper.spigot.commands.CommandsFramework;
-import io.github.jwdeveloper.spigot.commands.api.Commands;
 import it.heron.hpet.api.events.HPETReloadPluginEvent;
 
 import it.heron.hpet.main.commands.PetCommand;
@@ -18,11 +16,14 @@ import it.heron.hpet.modules.ModulesHandler;
 import it.heron.hpet.modules.pets.PetTypesHandler;
 import it.heron.hpet.modules.pets.userpets.abstracts.UserPet;
 import it.heron.hpet.modules.pets.userpets.fakeentities.armorstandmetadatahandlers.ArmorStandMetadataHandler;
+import it.heron.hpet.modules.pets.userpets.fakeentities.armorstandmetadatahandlers.versions.Metadata1_21;
+import it.heron.hpet.gui.PetGui;
 import lombok.Getter;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
+import org.bukkit.event.HandlerList;
 import org.bukkit.plugin.java.JavaPlugin;
 import it.heron.hpet.api.PetAPI;
 
@@ -39,6 +40,12 @@ public class PetPlugin extends JavaPlugin {
 
     @Getter
     private ArmorStandMetadataHandler armorStandMetadataHandler;
+
+    @Getter
+    private boolean packetEventsAvailable;
+
+    @Getter
+    private PetGui petGui;
 
     @Getter
     private List<String> disabledWorlds = new ArrayList<>();
@@ -89,24 +96,33 @@ public class PetPlugin extends JavaPlugin {
     }
 
     private void unload() {
-        for(UserPet userPet : PetPlugin.getApi().spawnedPets()) {
+        for(UserPet userPet : new ArrayList<>(PetPlugin.getApi().spawnedPets())) {
             PetPlugin.getApi().removePet(userPet);
         }
+        HandlerList.unregisterAll(this);
         this.modulesHandler.unloadModules();
     }
 
     private void load() {
         instance = this;
+        armorStandMetadataHandler = new Metadata1_21();
+        packetEventsAvailable = Bukkit.getPluginManager().isPluginEnabled("packetevents");
+        if (!packetEventsAvailable) {
+            getLogger().severe("PacketEvents 2.13.0+ is not enabled. HPET will load, but pets cannot be spawned until PacketEvents is installed and enabled.");
+        }
         saveResource("config.yml", false);
         saveResource("pets.yml", false);
         reloadConfig();
 
+        // Load modules first
+        this.modulesHandler.loadModules();
+        petGui = new PetGui(this);
+        Bukkit.getPluginManager().registerEvents(petGui, this);
+        RuntimeCompatibilityValidator.validate(this);
+
         for(Player p : Bukkit.getOnlinePlayers()) {
             PetPlugin.getApi().spawnDatabasePet(p);
         }
-
-        // Load modules first
-        this.modulesHandler.loadModules();
         
         // Log module loading issues but continue
         if (modulesHandler.moduleByName("Messages") == null) {
@@ -116,8 +132,10 @@ public class PetPlugin extends JavaPlugin {
         // Initialize commands
         try {
             PetCommand petCommand = new PetCommand();
-            Commands commands = CommandsFramework.enable(this);
-            commands.create(petCommand).register();
+            Objects.requireNonNull(getCommand("hpet"), "Command hpet is missing from plugin.yml")
+                    .setExecutor(petCommand);
+            Objects.requireNonNull(getCommand("hpet"))
+                    .setTabCompleter(petCommand);
         } catch (Exception e) {
             getLogger().severe("Failed to register commands: " + e.getMessage());
             e.printStackTrace();

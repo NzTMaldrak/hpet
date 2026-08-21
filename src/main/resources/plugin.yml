@@ -1,12 +1,20 @@
 name: HPET
 version: '${version}'
 main: it.heron.hpet.main.PetPlugin
-depend: [packetevents]
 api-version: '26.2'
 description: 'The packet based pet plugin'
-softdepend: [PlaceholderAPI, HeadDatabase, Vault, SuperVanish, PremiumVanish, CMI, MythicMobs, ItemsAdder, ModelEngine, HeadDB]
+softdepend: [packetevents, PlaceholderAPI, HeadDatabase, Vault, SuperVanish, PremiumVanish, CMI, MythicMobs, ItemsAdder, ModelEngine, HeadDB]
+commands:
+  hpet:
+    description: Main HPET command
+    usage: /hpet [help|select|remove|update|rename|buy|addlevel|removelevel|setlevel|level]
+    permission: pet.command
 permissions:
   pet.version:
     default: true
   pet.command:
     default: true
+  pet.rename:
+    default: true
+  pet.rename.color:
+    default: op

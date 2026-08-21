@@ -8,20 +8,29 @@ import it.heron.hpet.main.PetPlugin;
 import it.heron.hpet.modules.messages.MessagesHandler;
 import it.heron.hpet.modules.pets.pettypes.PetType;
 import it.heron.hpet.modules.pets.userpets.abstracts.UserPet;
+import it.heron.hpet.database.tables.LastPet;
 
 import org.bukkit.command.CommandSender;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandExecutor;
+import org.bukkit.command.TabCompleter;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.ChatColor;
+import org.bukkit.Sound;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.Arrays;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 
-public final class PetCommand {
+public final class PetCommand implements CommandExecutor, TabCompleter {
 
     private final PetAPI petAPI;
     private volatile MessagesHandler messagesHandler;
@@ -117,12 +126,95 @@ public final class PetCommand {
         return userPet;
     }
 
+    @Override
+    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+        if (args.length == 0 || args[0].equalsIgnoreCase("help")) {
+            if (args.length == 0 && sender instanceof Player player) {
+                PetPlugin.getInstance().getPetGui().openHome(player);
+            } else {
+                sendHelpMessage(sender);
+            }
+            return true;
+        }
+
+        String subcommand = args[0].toLowerCase(Locale.ROOT);
+        if (!PetPlugin.getInstance().isPacketEventsAvailable()
+                && !subcommand.equals("help")) {
+            sendColoredMessage(sender, "&cPacketEvents 2.13.0 o superiore non è installato/attivo. Impossibile usare i pet.");
+            return true;
+        }
+        try {
+            switch (subcommand) {
+                case "select" -> {
+                    if (args.length < 2) return false;
+                    selectPetCommand(sender, args[1], target(args, 2));
+                }
+                case "remove" -> removePetCommand(sender, target(args, 1));
+                case "update" -> updatePetCommand(sender, target(args, 1));
+                case "buy" -> {
+                    if (args.length < 2) return false;
+                    buyPetCommand(sender, args[1], target(args, 2));
+                }
+                case "addlevel" -> {
+                    if (args.length < 2) return false;
+                    addLevelCommand(sender, Double.parseDouble(args[1]), target(args, 2));
+                }
+                case "removelevel" -> {
+                    if (args.length < 2) return false;
+                    removeLevelCommand(sender, Double.parseDouble(args[1]), target(args, 2));
+                }
+                case "setlevel" -> {
+                    if (args.length < 2) return false;
+                    setLevelCommand(sender, Double.parseDouble(args[1]), target(args, 2));
+                }
+                case "level" -> showLevelCommand(sender, target(args, 1));
+                case "rename" -> {
+                    if (!(sender instanceof Player player)) {
+                        sendColoredMessage(sender, "&cIl comando rename può essere usato soltanto da un giocatore.");
+                    } else if (args.length < 2) {
+                        sendColoredMessage(sender, "&eUsa: &c/hpet rename <nuovo nome>");
+                    } else {
+                        renamePetCommand(player, String.join(" ", Arrays.copyOfRange(args, 1, args.length)));
+                    }
+                }
+                default -> sendHelpMessage(sender);
+            }
+        } catch (NumberFormatException ignored) {
+            sendColoredMessage(sender, "&cInserisci un numero valido.");
+        }
+        return true;
+    }
+
+    private Player target(String[] args, int index) {
+        return args.length > index ? Bukkit.getPlayerExact(args[index]) : null;
+    }
+
+    @Override
+    public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
+        if (args.length == 1) {
+            return filterPrefix(List.of("help", "select", "remove", "update", "buy", "addlevel",
+                    "removelevel", "setlevel", "level", "rename"), args[0]);
+        }
+        if (args.length == 2 && (args[0].equalsIgnoreCase("select") || args[0].equalsIgnoreCase("buy"))) {
+            return filterPrefix(new ArrayList<>(getEnabledPetTypeNames()), args[1]);
+        }
+        return List.of();
+    }
+
+    private List<String> filterPrefix(Collection<String> values, String prefix) {
+        String normalized = prefix.toLowerCase(Locale.ROOT);
+        return values.stream()
+                .filter(value -> value.toLowerCase(Locale.ROOT).startsWith(normalized))
+                .sorted()
+                .collect(Collectors.toList());
+    }
+
 
     /*
      * /hpet - main command, opens gui, pet.command
      */
     @FCommand(
-        name = "hpet", 
+        pattern = "/hpet",
         permission = "pet.command", 
         description = "Main HPET command.", 
         usageMessage = "/hpet [subcommand]"
@@ -132,7 +224,7 @@ public final class PetCommand {
     }
 
     @FCommand(
-        name = "hpet help", 
+        pattern = "/hpet help",
         permission = "pet.command", 
         description = "Shows help for HPET commands"
     )
@@ -152,6 +244,7 @@ public final class PetCommand {
         helpLines.add("&e/hpet removelevel <amount> [player] &7- Remove pet levels");
         helpLines.add("&e/hpet setlevel <level> [player] &7- Set pet level");
         helpLines.add("&e/hpet level [player] &7- Show current pet level");
+        helpLines.add("&e/hpet rename <nome> &7- Rinomina il pet attivo");
 
         helpLines.forEach(line -> sendColoredMessage(sender, line));
     }
@@ -197,6 +290,56 @@ public final class PetCommand {
             placeholders.put("{player}", targetPlayer.getName());
             sendMessageToSender(sender, "command.hpet.select.error.failed", placeholders);
         }
+    }
+
+    public void renamePetCommand(Player player, String requestedName) {
+        if (!player.hasPermission("pet.rename")) {
+            sendColoredMessage(player, "&cNon hai il permesso di rinominare il pet.");
+            return;
+        }
+        UserPet userPet = getUserPet(player, player);
+        if (userPet == null) return;
+
+        String name = requestedName == null ? "" : requestedName.trim();
+        if (!player.hasPermission("pet.rename.color")) {
+            name = ChatColor.stripColor(ChatColor.translateAlternateColorCodes('&', name));
+        }
+        int maxLength = Math.max(1, PetPlugin.getInstance().getConfig().getInt("nametags.maxlength", 20));
+        name = truncateVisibleLegacyName(name, maxLength);
+        for (String invalid : PetPlugin.getInstance().getConfig().getStringList("nametags.invalidnames")) {
+            if (invalid == null || invalid.isBlank()) continue;
+            name = name.replaceAll("(?i)" + Pattern.quote(invalid), "*");
+        }
+        if (ChatColor.stripColor(ChatColor.translateAlternateColorCodes('&', name)).isBlank()) {
+            sendColoredMessage(player, "&cIl nome del pet non può essere vuoto.");
+            return;
+        }
+
+        userPet.rename(name);
+        LastPet lastPet = LastPet.load(player.getUniqueId());
+        if (lastPet == null) lastPet = new LastPet();
+        lastPet.setOwner(player.getUniqueId());
+        lastPet.setPetType(userPet.getPetType().getName());
+        lastPet.setPetName(name);
+        lastPet.save();
+        player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1f, 1f);
+        sendColoredMessage(player, "&aPet rinominato in: &r" + name);
+    }
+
+    private String truncateVisibleLegacyName(String input, int maxVisibleLength) {
+        StringBuilder result = new StringBuilder();
+        int visible = 0;
+        for (int index = 0; index < input.length() && visible < maxVisibleLength; index++) {
+            char current = input.charAt(index);
+            if (current == '&' && index + 1 < input.length()
+                    && "0123456789abcdefklmnorxABCDEFKLMNORX".indexOf(input.charAt(index + 1)) >= 0) {
+                result.append(current).append(input.charAt(++index));
+                continue;
+            }
+            result.append(current);
+            visible++;
+        }
+        return result.toString();
     }
 
     /*

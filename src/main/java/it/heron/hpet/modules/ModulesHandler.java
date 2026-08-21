@@ -15,6 +15,7 @@ import it.heron.hpet.modules.pets.PetsHandler;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 import it.heron.hpet.main.PetPlugin;
+import java.util.logging.Level;
 
 import java.util.*;
 
@@ -49,7 +50,7 @@ public class ModulesHandler {
     private Collection<Module> validModules() {
         List<Module> modules = new ArrayList<>();
         modules.add(new DatabaseModule(plugin));
-        modules.add(new PetTypesHandler(plugin));
+        modules.add(PetPlugin.getInstance().getPetTypesHandler());
         modules.add(new PetsHandler(plugin));
         modules.add(new AbilitiesHandler(plugin));
 
@@ -68,7 +69,7 @@ public class ModulesHandler {
 
     private void removeModule(Module module) {
         module.unload();
-        modules.remove(module.name());
+        modules.remove(module.name().toLowerCase(Locale.ROOT));
     }
 
     private void loadAddedModules() {
@@ -77,9 +78,13 @@ public class ModulesHandler {
                 module.load();
                 Bukkit.getLogger().info("Loaded module "+module.name());
             } catch (InvalidLoadException e) {
-                e.printStackTrace();
-                Bukkit.getLogger().severe("Could not load module "+module.name());
+                plugin.getLogger().log(Level.SEVERE, "Could not load module " + module.name(), e);
             } catch (RefusedLoadException ignored) {}
+            catch (RuntimeException exception) {
+                plugin.getLogger().log(Level.SEVERE,
+                        "Module " + module.name() + " failed to load; HPET will continue with that module disabled",
+                        exception);
+            }
         }
     }
 
