@@ -6,7 +6,7 @@
 
     <groupId>pet</groupId>
     <artifactId>HPET</artifactId>
-    <version>5.9</version>
+    <version>6.0</version>
     <packaging>jar</packaging>
 
     <name>HPET</name>

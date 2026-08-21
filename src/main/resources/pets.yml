@@ -41,7 +41,7 @@ bread_scientist:
     - "&2• Gives regeneration buff on walk"
   abilities:
     - "CONSOLE_COMMAND:/effect give %player% minecraft:regeneration 3 1:WALKe"
-    - "CONSOLE_COMMAND:/summon potion ~ ~1 ~ {Potion:{id:"minecraft:healing"}}:10s"
+    - 'CONSOLE_COMMAND:/summon potion ~ ~1 ~ {Potion:{id:"minecraft:healing"}}:10s'
   skins:
     - eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvYjRiYTA2Y2MyMTQ2ZjllNDc3ZDExMTczMmJhZjJjYzVkMDNhM2E1YzEyYmNkNzE5NTEzZWQ4ODg4ZWNmYjlkMiJ9fX0=
 
