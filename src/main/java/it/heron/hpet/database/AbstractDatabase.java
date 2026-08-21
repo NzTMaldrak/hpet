@@ -5,6 +5,7 @@ import com.j256.ormlite.jdbc.JdbcConnectionSource;
 import com.j256.ormlite.table.TableUtils;
 import it.heron.hpet.database.tables.LastPet;
 import it.heron.hpet.database.tables.PetLevel;
+import it.heron.hpet.database.tables.DailyAbilityUsage;
 import lombok.Getter;
 
 public abstract class AbstractDatabase implements Database {
@@ -21,6 +22,7 @@ public abstract class AbstractDatabase implements Database {
             // Register table classes
             TableUtils.createTableIfNotExists(connectionSource, LastPet.class);
             TableUtils.createTableIfNotExists(connectionSource, PetLevel.class);
+            TableUtils.createTableIfNotExists(connectionSource, DailyAbilityUsage.class);
         } catch (Exception e) {
             connectionSource = null;
             throw new IllegalStateException("Could not initialize the HPET database", e);

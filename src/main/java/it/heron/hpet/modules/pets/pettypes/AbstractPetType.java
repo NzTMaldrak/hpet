@@ -3,8 +3,8 @@ package it.heron.hpet.modules.pets.pettypes;
 import it.heron.hpet.database.AbstractDatabase;
 import it.heron.hpet.database.tables.BoughtPets;
 import it.heron.hpet.main.PetPlugin;
-import it.heron.hpet.modules.abilities.AbilitiesHandler;
-import it.heron.hpet.modules.abilities.abstracts.Ability;
+import it.heron.hpet.modules.abilities.AbilityDefinition;
+import it.heron.hpet.modules.abilities.AbilityParser;
 import it.heron.hpet.modules.messages.ComponentsHelper;
 import lombok.Getter;
 import lombok.NonNull;
@@ -16,6 +16,8 @@ import org.bukkit.util.Vector;
 
 import javax.annotation.Nullable;
 import java.util.List;
+import java.util.ArrayList;
+import java.util.logging.Level;
 
 public abstract class AbstractPetType implements PetType {
 
@@ -25,7 +27,7 @@ public abstract class AbstractPetType implements PetType {
     @Getter
     private @NonNull String name;
     @Getter
-    private @Nullable Ability ability = null;
+    private @NonNull List<AbilityDefinition> abilities = List.of();
 
     @Getter @Setter
     private @Nullable Component displayName;
@@ -65,6 +67,22 @@ public abstract class AbstractPetType implements PetType {
         this.animationName = configuration.getString(absolutePath("animation"), animationName);
         this.yaw = (float) configuration.getDouble(absolutePath("yaw"), yaw);
         this.distance = configuration.getDouble(absolutePath("distance"), distance);
+        this.abilities = loadAbilities(configuration.getStringList(absolutePath("abilities")));
+    }
+
+    private List<AbilityDefinition> loadAbilities(List<String> configuredAbilities) {
+        List<AbilityDefinition> parsed = new ArrayList<>();
+        for (int index = 0; index < configuredAbilities.size(); index++) {
+            String configured = configuredAbilities.get(index);
+            try {
+                parsed.add(AbilityParser.parse(configured));
+            } catch (IllegalArgumentException exception) {
+                PetPlugin.getInstance().getLogger().log(Level.SEVERE,
+                        "Invalid ability at " + absolutePath("abilities") + "[" + index + "]: "
+                                + configured + " (" + exception.getMessage() + ")");
+            }
+        }
+        return List.copyOf(parsed);
     }
 
     @Override

@@ -1,6 +1,7 @@
 package it.heron.hpet.modules.pets.userpets.abstracts;
 
 import it.heron.hpet.modules.pets.pettypes.PetType;
+import it.heron.hpet.modules.abilities.PetAbilityRuntime;
 import it.heron.hpet.modules.pets.userpets.animations.abstracts.IAnimation;
 import it.heron.hpet.modules.pets.userpets.nametags.INametag;
 import org.bukkit.Location;
@@ -64,6 +65,10 @@ public interface UserPet {
      * @param visible true to make the pet potentially visible, false to always hide it.
      */
     void setVisible(boolean visible);
+
+    void setGlowing(boolean glowing);
+
+    PetAbilityRuntime getAbilityRuntime();
 
     /**
      * Gets the unique entity ID assigned to this pet by the server/packet system when spawned.

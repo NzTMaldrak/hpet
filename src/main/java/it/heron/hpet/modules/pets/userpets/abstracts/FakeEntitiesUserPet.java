@@ -3,6 +3,8 @@ package it.heron.hpet.modules.pets.userpets.abstracts;
 import it.heron.hpet.modules.pets.pettypes.PetType;
 import it.heron.hpet.modules.pets.userpets.fakeentities.FakeEntity;
 import it.heron.hpet.modules.pets.userpets.fakeentities.AbstractFakeEntity;
+import it.heron.hpet.modules.pets.userpets.fakeentities.FakeArmostand;
+import it.heron.hpet.modules.pets.userpets.fakeentities.FakeMobEntity;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.Entity;
@@ -17,6 +19,12 @@ public abstract class FakeEntitiesUserPet extends AbstractUserPet {
         super(petType, owner, level);
     }
 
+
+    @Override
+    public void setGlowing(boolean glowing) {
+        if (fakeEntity instanceof FakeArmostand armorStand) armorStand.setGlow(glowing);
+        if (fakeEntity instanceof FakeMobEntity mob) mob.setGlow(glowing);
+    }
 
     @Override
     public void onSpawn() {

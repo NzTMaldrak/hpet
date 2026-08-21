@@ -2,25 +2,26 @@
 package it.heron.hpet.modules.abilities;
 
 import it.heron.hpet.main.PetPlugin;
-import it.heron.hpet.modules.abilities.abstracts.Ability;
 import it.heron.hpet.modules.abstracts.DefaultInstanceModule;
-import it.heron.hpet.modules.exceptions.InvalidUnloadException;
-import lombok.Getter;
-import lombok.NonNull; // Import if needed for parameter validation
+import it.heron.hpet.modules.pets.PetsHandler;
+import it.heron.hpet.modules.pets.userpets.abstracts.UserPet;
+import org.bukkit.Bukkit;
+import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.HandlerList;
+import org.bukkit.event.Listener;
+import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.player.PlayerMoveEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.player.PlayerToggleSneakEvent;
+import org.bukkit.event.player.PlayerVelocityEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.util.List; // Import List
-
-/**
- * Module handler for abilities, manages the Python bridge lifecycle
- * and provides factory methods for creating abilities.
- */
-public class AbilitiesHandler extends DefaultInstanceModule {
-
-    @Getter // Keep getter if bridge instance needs to be accessed elsewhere
-
-    // Default function name to be called within Python ability scripts
-    private static final String DEFAULT_PYTHON_FUNCTION_NAME = "on_execute";
+/** Routes Bukkit events to the per-pet ability runtimes. */
+public class AbilitiesHandler extends DefaultInstanceModule implements Listener {
 
     public AbilitiesHandler(JavaPlugin plugin) {
         super(plugin);
@@ -33,12 +34,78 @@ public class AbilitiesHandler extends DefaultInstanceModule {
 
     @Override
     protected void onLoad() {
+        plugin.getServer().getPluginManager().registerEvents(this, plugin);
     }
 
     @Override
     protected void onUnload() {
-
+        HandlerList.unregisterAll(this);
     }
 
+    @EventHandler(ignoreCancelled = true)
+    public void onWalk(PlayerMoveEvent event) {
+        if (event.getTo() == null) return;
+        if (event.getFrom().getBlockX() == event.getTo().getBlockX()
+                && event.getFrom().getBlockY() == event.getTo().getBlockY()
+                && event.getFrom().getBlockZ() == event.getTo().getBlockZ()) return;
+        trigger(event.getPlayer(), AbilityTrigger.WALK);
+    }
 
+    @EventHandler(ignoreCancelled = true)
+    public void onShift(PlayerToggleSneakEvent event) {
+        if (event.isSneaking()) trigger(event.getPlayer(), AbilityTrigger.SHIFT);
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    public void onBlockBreak(BlockBreakEvent event) {
+        trigger(event.getPlayer(), AbilityTrigger.BLOCK_BREAK);
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    public void onBlockPlace(BlockPlaceEvent event) {
+        trigger(event.getPlayer(), AbilityTrigger.BLOCK_PLACE);
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    public void onVelocity(PlayerVelocityEvent event) {
+        if (protects(event.getPlayer(), AbilityType.NO_KNOCKBACK)) event.setCancelled(true);
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    public void onDamage(EntityDamageEvent event) {
+        if (!(event.getEntity() instanceof Player player)) return;
+        if (event.getCause() == EntityDamageEvent.DamageCause.FALL
+                && protects(player, AbilityType.NO_FALL_DAMAGE)) event.setCancelled(true);
+    }
+
+    @EventHandler
+    public void onQuit(PlayerQuitEvent event) {
+        for (UserPet userPet : petsHandler().userPets(event.getPlayer().getUniqueId())) {
+            petsHandler().removePet(userPet);
+        }
+    }
+
+    @EventHandler
+    public void onJoin(PlayerJoinEvent event) {
+        Bukkit.getScheduler().runTask(plugin, () -> {
+            if (petsHandler().userPets(event.getPlayer().getUniqueId()).isEmpty()) {
+                PetPlugin.getApi().spawnDatabasePet(event.getPlayer());
+            }
+        });
+    }
+
+    private void trigger(Player player, AbilityTrigger trigger) {
+        for (UserPet userPet : petsHandler().userPets(player.getUniqueId())) {
+            userPet.getAbilityRuntime().trigger(trigger);
+        }
+    }
+
+    private boolean protects(Player player, AbilityType type) {
+        return petsHandler().userPets(player.getUniqueId()).stream()
+                .anyMatch(userPet -> userPet.getAbilityRuntime().protectsFrom(type));
+    }
+
+    private PetsHandler petsHandler() {
+        return (PetsHandler) PetPlugin.getInstance().getModulesHandler().moduleByName("PetsHandler");
+    }
 }

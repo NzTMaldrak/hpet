@@ -1,6 +1,6 @@
 package it.heron.hpet.modules.pets.pettypes;
 
-import it.heron.hpet.modules.abilities.abstracts.Ability;
+import it.heron.hpet.modules.abilities.AbilityDefinition;
 import net.kyori.adventure.text.Component;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -42,6 +42,6 @@ public interface PetType {
     boolean bought(Player player);
     boolean canBuy(Player player);
 
-    Ability getAbility();
+    List<AbilityDefinition> getAbilities();
 
 }

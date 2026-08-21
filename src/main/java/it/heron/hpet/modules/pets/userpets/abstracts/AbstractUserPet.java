@@ -1,6 +1,7 @@
 package it.heron.hpet.modules.pets.userpets.abstracts;
 
 import it.heron.hpet.main.PetPlugin;
+import it.heron.hpet.modules.abilities.PetAbilityRuntime;
 import it.heron.hpet.modules.invisibilityintegration.InvisibilityHandler;
 import it.heron.hpet.modules.pets.pettypes.PetType;
 import it.heron.hpet.modules.pets.userpets.animations.abstracts.IAnimation;
@@ -44,6 +45,8 @@ public abstract class AbstractUserPet implements UserPet {
     protected IAnimation animation;
     @Getter
     protected INametag nametag;
+    @Getter
+    protected PetAbilityRuntime abilityRuntime;
 
     private boolean currentVisibilityState = true; // current visibility state, shouldn't be used externally
     private int movementTicks = 0;
@@ -57,6 +60,7 @@ public abstract class AbstractUserPet implements UserPet {
         this.nametag = NametagGenerator.getFormattedNametag(displayName, level, owner.getName());
         this.animation = createAnimation(petType.getAnimationName());
         this.location = positionFromOwner(owner.getLocation(), new Vector());
+        this.abilityRuntime = new PetAbilityRuntime(this, petType.getAbilities());
     }
 
     @Override
@@ -77,10 +81,12 @@ public abstract class AbstractUserPet implements UserPet {
         onSpawn();
         nametag.show(getNametagLocation(location));
         if(this.id == UNSPAWNED_ID) throw new RuntimeException("There was an error while spawning the Pet");
+        abilityRuntime.activate();
     }
 
     @Override
     public void despawn() {
+        abilityRuntime.deactivate();
         if(!isSpawned()) return;
         nametag.hide();
         onDespawn();
@@ -101,9 +107,7 @@ public abstract class AbstractUserPet implements UserPet {
             teleport(getNextLocation());
         }
 
-        if(petType.getAbility() != null) {
-            petType.getAbility().execute(this);
-        }
+        abilityRuntime.tick();
     }
 
     @Override
@@ -123,6 +127,10 @@ public abstract class AbstractUserPet implements UserPet {
         animation.nextStep();
         Location ownerLocation = Bukkit.getEntity(owner).getLocation();
         return positionFromOwner(ownerLocation, animation.relativeLocation(ownerLocation));
+    }
+
+    @Override
+    public void setGlowing(boolean glowing) {
     }
 
     private Location positionFromOwner(Location ownerLocation, Vector animationOffset) {

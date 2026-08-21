@@ -1,5 +1,9 @@
 package it.heron.hpet.main;
 
+import it.heron.hpet.modules.abilities.AbilityDefinition;
+import it.heron.hpet.modules.abilities.AbilityParser;
+import it.heron.hpet.modules.abilities.AbilityTrigger;
+import it.heron.hpet.modules.abilities.AbilityType;
 import it.heron.hpet.modules.pets.pettypes.CustomModelPetType;
 import it.heron.hpet.modules.pets.pettypes.HeadPetType;
 import it.heron.hpet.modules.pets.pettypes.StackPetType;
@@ -41,6 +45,7 @@ final class RuntimeCompatibilityValidator {
     }
 
     static void validate(PetPlugin plugin) {
+        assertAbilityParser();
         if (!plugin.isPacketEventsAvailable()) return;
         World world = plugin.getServer().getWorlds().stream().findFirst().orElse(null);
         if (world == null) throw new IllegalStateException("No world is available for the HPET runtime self-test");
@@ -122,7 +127,33 @@ final class RuntimeCompatibilityValidator {
                     mobPet.despawn();
                     assertIconColors(mobType.generateGuiIcon(null));
                 });
-        plugin.getLogger().info("Paper 26.2 runtime self-test passed (database selection, legacy colors, GUI, nametag, metadata, equipment and mob pets)");
+        plugin.getLogger().info("Paper 26.2 runtime self-test passed (database selection, abilities, legacy colors, GUI, nametag, metadata, equipment and mob pets)");
+    }
+
+    private static void assertAbilityParser() {
+        AbilityDefinition complex = AbilityParser.parse(
+                "MESSAGE:https://example.test:8443/pet:35%:1m3s:2l:SHIFTe:skipFirstRun=true:daily=2h15m30s");
+        if (complex.type() != AbilityType.MESSAGE
+                || !complex.arguments().equals(List.of("https://example.test:8443/pet"))
+                || complex.chancePercent() != 35d
+                || complex.cooldownMillis() != 63_000L
+                || complex.requiredLevel() != 2
+                || complex.trigger() != AbilityTrigger.SHIFT
+                || !complex.skipFirstRun()
+                || complex.dailyAllowanceMillis() != 8_130_000L) {
+            throw new IllegalStateException("The ability parser lost arguments or modifiers");
+        }
+
+        AbilityDefinition velocity = AbilityParser.parse("VELOCITY:3");
+        AbilityDefinition particle = AbilityParser.parse("PLAYER_PARTICLE:END_ROD:10");
+        AbilityDefinition sound = AbilityParser.parse("PLAY_SOUND_EVERYONE:ENTITY_ENDERMAN_AMBIENT:1:100");
+        AbilityDefinition potion = AbilityParser.parse("POTION:JUMP:30:3");
+        if (!velocity.arguments().equals(List.of("3"))
+                || !particle.arguments().equals(List.of("END_ROD", "10"))
+                || sound.arguments().size() != 3
+                || potion.arguments().size() != 3) {
+            throw new IllegalStateException("An ability used by pets.yml could not be parsed");
+        }
     }
 
     private static void assertLegacyColors() {
