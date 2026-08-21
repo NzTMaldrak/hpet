@@ -1,6 +1,7 @@
 package it.heron.hpet.modules.abilities;
 
 import it.heron.hpet.database.tables.DailyAbilityUsage;
+import it.heron.hpet.modules.pets.pettypes.PetType;
 import it.heron.hpet.modules.pets.userpets.abstracts.UserPet;
 import org.bukkit.Bukkit;
 
@@ -23,7 +24,7 @@ public final class PetAbilityRuntime {
 
     private final UserPet userPet;
     private final List<State> states;
-    private boolean active;
+    private volatile boolean active;
 
     public PetAbilityRuntime(UserPet userPet, List<AbilityDefinition> definitions) {
         this.userPet = userPet;
@@ -77,6 +78,47 @@ public final class PetAbilityRuntime {
                     && state.hasDailyTime()
                     && userPet.getLevel() >= state.definition.requiredLevel();
         });
+    }
+
+    /**
+     * Returns the longest remaining time among active abilities. For a
+     * persistent effect with a daily allowance (for example FLY), this is the
+     * unused daily time; for a temporary effect, this is its time to expiry.
+     */
+    public long remainingEffectMillis() {
+        return remainingEffectMillis(null);
+    }
+
+    /**
+     * Returns the longest remaining active time for one ability type.
+     *
+     * @param type ability type, or {@code null} to include every ability
+     * @return remaining milliseconds, or {@code 0} when no matching effect is active
+     */
+    public long remainingEffectMillis(AbilityType type) {
+        if (!active) return 0L;
+        long now = System.currentTimeMillis();
+        long remaining = 0L;
+        for (State state : states) {
+            if (type != null && state.definition.type() != type) continue;
+            remaining = Math.max(remaining, state.remainingActiveMillis(now));
+        }
+        return remaining;
+    }
+
+    /** Reads persisted daily time for a pet that is not currently active. */
+    public static long remainingDailyMillis(UUID owner, PetType petType, AbilityType type) {
+        long remaining = 0L;
+        LocalDate today = LocalDate.now(SERVER_ZONE);
+        for (AbilityDefinition definition : petType.getAbilities()) {
+            if (!definition.hasDailyAllowance()) continue;
+            if (type != null && definition.type() != type) continue;
+            DailyAbilityUsage usage = DailyAbilityUsage.loadOrCreate(
+                    owner, petType.getName(), abilityKey(definition), today);
+            remaining = Math.max(remaining, Math.max(
+                    0L, definition.dailyAllowanceMillis() - usage.getUsedMillis()));
+        }
+        return remaining;
     }
 
     private void trigger(AbilityTrigger trigger, long now) {
@@ -140,7 +182,7 @@ public final class PetAbilityRuntime {
     private static final class State {
         private final AbilityDefinition definition;
         private long nextEligibleAt;
-        private long cleanupAt = -1L;
+        private volatile long cleanupAt = -1L;
         private boolean firstAttemptMade;
         private Runnable cleanup = () -> { };
         private final DailyAbilityUsage dailyUsage;
@@ -231,6 +273,21 @@ public final class PetAbilityRuntime {
         private long remainingDailyMillis() {
             if (dailyUsage == null) return -1L;
             return Math.max(0L, definition.dailyAllowanceMillis() - dailyUsage.getUsedMillis());
+        }
+
+        private long remainingActiveMillis(long now) {
+            if (dailyUsage != null) {
+                long elapsedSinceUpdate = 0L;
+                if (consumingDailyTime) {
+                    long effectiveNow = cleanupAt > 0L ? Math.min(now, cleanupAt) : now;
+                    elapsedSinceUpdate = Math.max(0L, effectiveNow - lastUsageUpdateAt);
+                }
+                long projectedUsed = Math.min(
+                        definition.dailyAllowanceMillis(),
+                        dailyUsage.getUsedMillis() + elapsedSinceUpdate);
+                return Math.max(0L, definition.dailyAllowanceMillis() - projectedUsed);
+            }
+            return cleanupAt > now ? cleanupAt - now : 0L;
         }
 
         private void saveDailyUsage() {

@@ -34,9 +34,10 @@ public final class MobPetType extends AbstractPetType {
         Material material = Material.matchMaterial(entityType.name() + "_SPAWN_EGG");
         ItemStack icon = new ItemStack(material == null ? Material.LEAD : material);
         ItemMeta meta = icon.getItemMeta();
-        meta.displayName(getDisplayName() == null ? Component.text(getName()) : getDisplayName());
+        meta.displayName(renderGuiComponent(viewer,
+                getDisplayName() == null ? Component.text(getName()) : getDisplayName()));
         List<Component> lore = new ArrayList<>();
-        if (getDescription() != null) lore.addAll(getDescription());
+        if (getDescription() != null) lore.addAll(renderGuiComponents(viewer, getDescription()));
         lore.add(Component.empty());
         lore.add(ComponentsHelper.simpleParse("&aClicca per selezionare"));
         meta.lore(lore);

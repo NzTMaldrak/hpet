@@ -29,6 +29,7 @@ import it.heron.hpet.api.PetAPI;
 
 import java.io.File;
 import java.util.*;
+import java.util.logging.Level;
 
 public class PetPlugin extends JavaPlugin {
 
@@ -54,6 +55,8 @@ public class PetPlugin extends JavaPlugin {
     private final PetTypesHandler petTypesHandler = new PetTypesHandler(this);
 
     private YamlConfiguration config;
+
+    private boolean reloading;
 
     @Getter
     private final ModulesHandler modulesHandler = new ModulesHandler(this);
@@ -87,12 +90,33 @@ public class PetPlugin extends JavaPlugin {
         unload();
     }
 
+    /** Keeps the original public API used by hooks and external add-ons. */
     public void reload() {
-        PetPlugin.getInstance().reloadConfig();
-        unload();
-        load();
-        Bukkit.getPluginManager().callEvent(new HPETReloadPluginEvent());
-        Bukkit.getLogger().info("Reloaded HPET!");
+        reloadAll();
+    }
+
+    public synchronized boolean reloadAll() {
+        if (reloading) {
+            getLogger().warning("Ignored an HPET reload because another reload is already running.");
+            return false;
+        }
+
+        reloading = true;
+        try {
+            // unload() removes spawned pets and unloads every module. Cancelling
+            // all remaining tasks also covers delayed ability/listener work.
+            unload();
+            Bukkit.getScheduler().cancelTasks(this);
+            load();
+            Bukkit.getPluginManager().callEvent(new HPETReloadPluginEvent());
+            getLogger().info("Reloaded HPET configuration, pets, modules, hooks, GUI and online pets.");
+            return true;
+        } catch (RuntimeException exception) {
+            getLogger().log(Level.SEVERE, "Could not fully reload HPET", exception);
+            return false;
+        } finally {
+            reloading = false;
+        }
     }
 
     private void unload() {
@@ -136,6 +160,8 @@ public class PetPlugin extends JavaPlugin {
                     .setExecutor(petCommand);
             Objects.requireNonNull(getCommand("hpet"))
                     .setTabCompleter(petCommand);
+            Objects.requireNonNull(getCommand("reload"), "Command reload is missing from plugin.yml")
+                    .setExecutor(petCommand);
         } catch (Exception e) {
             getLogger().severe("Failed to register commands: " + e.getMessage());
             e.printStackTrace();

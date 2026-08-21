@@ -5,11 +5,14 @@ import it.heron.hpet.database.tables.BoughtPets;
 import it.heron.hpet.main.PetPlugin;
 import it.heron.hpet.modules.abilities.AbilityDefinition;
 import it.heron.hpet.modules.abilities.AbilityParser;
+import it.heron.hpet.modules.abstracts.Module;
+import it.heron.hpet.modules.hooks.PapiModule;
 import it.heron.hpet.modules.messages.ComponentsHelper;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
@@ -118,6 +121,22 @@ public abstract class AbstractPetType implements PetType {
     protected String absolutePath(String subpath) {
         if(subpath == null || subpath.isEmpty()) return this.name;
         return this.name+"."+subpath;
+    }
+
+    protected Component renderGuiComponent(Player viewer, Component component) {
+        if (viewer == null || component == null) return component;
+        Module module = PetPlugin.getInstance().getModulesHandler().moduleByName("PlaceholderAPI");
+        if (!(module instanceof PapiModule papiModule) || !module.isLoaded()) return component;
+
+        String legacyText = LegacyComponentSerializer.legacyAmpersand().serialize(component);
+        return ComponentsHelper.simpleParse(papiModule.parsePlaceholders(viewer, legacyText, this));
+    }
+
+    protected List<Component> renderGuiComponents(Player viewer, List<Component> components) {
+        if (components == null) return List.of();
+        return components.stream()
+                .map(component -> renderGuiComponent(viewer, component))
+                .toList();
     }
 
 }

@@ -22,7 +22,9 @@ import java.util.*;
 public class ModulesHandler {
 
     private JavaPlugin plugin;
-    private final HashMap<String, Module> modules = new HashMap<>();
+    // Module order matters: the pet and persistence modules use the database
+    // while they are being initialized. Keep insertion order on load/reload.
+    private final Map<String, Module> modules = new LinkedHashMap<>();
 
     public ModulesHandler(JavaPlugin plugin) {
         this.plugin = plugin;

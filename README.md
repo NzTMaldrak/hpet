@@ -201,6 +201,14 @@ All official addons are free, avaiable on SpigotMc<br>
 %pet_isGlowing% - return whether the pet is glowing or not, true or false<br>
 %pet_level% - return the pet level value<br>
 
+HPET also exposes the remaining duration of active abilities. Persistent abilities such as `FLY`
+report their unused `daily` allowance, while temporary abilities report their time to expiry:<br>
+`%hpet_ability_remaining%` - longest remaining ability, formatted as `MM:SS` or `HH:MM:SS`<br>
+`%hpet_ability_remaining_<ability>%` - remaining time for a specific ability, for example `%hpet_ability_remaining_fly%`<br>
+`%hpet_ability_remaining_seconds%` - longest remaining ability in whole seconds<br>
+`%hpet_ability_remaining_seconds_<ability>%` - specific ability time in whole seconds<br>
+Inactive or expired abilities return `00:00` (or `0` for the seconds variants).<br>
+
 
 ## Developer API
 

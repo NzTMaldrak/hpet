@@ -473,7 +473,7 @@ final class AbilityActions {
 
     private static long dailyDuration(long configuredMillis, long remainingDailyMillis) {
         return remainingDailyMillis > 0L
-                ? Math.max(configuredMillis, remainingDailyMillis)
+                ? Math.min(configuredMillis, remainingDailyMillis)
                 : configuredMillis;
     }
 }

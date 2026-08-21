@@ -39,9 +39,10 @@ public abstract class StackPetType extends AbstractPetType {
                 ? new ItemStack(Material.PAPER)
                 : skins[0].clone();
         ItemMeta meta = icon.getItemMeta();
-        meta.displayName(getDisplayName() == null ? Component.text(getName()) : getDisplayName());
+        meta.displayName(renderGuiComponent(viewer,
+                getDisplayName() == null ? Component.text(getName()) : getDisplayName()));
         List<Component> lore = new ArrayList<>();
-        if (getDescription() != null) lore.addAll(getDescription());
+        if (getDescription() != null) lore.addAll(renderGuiComponents(viewer, getDescription()));
         lore.add(Component.empty());
         lore.add(ComponentsHelper.simpleParse("&aClicca per selezionare"));
         meta.lore(lore);

@@ -7,8 +7,12 @@ softdepend: [packetevents, PlaceholderAPI, HeadDatabase, Vault, SuperVanish, Pre
 commands:
   hpet:
     description: Main HPET command
-    usage: /hpet [help|select|remove|update|rename|buy|addlevel|removelevel|setlevel|level]
+    usage: /hpet [help|select|remove|update|rename|buy|addlevel|removelevel|setlevel|level|reload]
     permission: pet.command
+  reload:
+    description: Reload all HPET resources and runtime modules
+    usage: /reload
+    permission: pet.reload
 permissions:
   pet.version:
     default: true
@@ -17,4 +21,6 @@ permissions:
   pet.rename:
     default: true
   pet.rename.color:
+    default: op
+  pet.reload:
     default: op

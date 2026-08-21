@@ -128,6 +128,11 @@ public final class PetCommand implements CommandExecutor, TabCompleter {
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+        if (command.getName().equalsIgnoreCase("reload")) {
+            reloadCommand(sender);
+            return true;
+        }
+
         if (args.length == 0 || args[0].equalsIgnoreCase("help")) {
             if (args.length == 0 && sender instanceof Player player) {
                 PetPlugin.getInstance().getPetGui().openHome(player);
@@ -139,7 +144,8 @@ public final class PetCommand implements CommandExecutor, TabCompleter {
 
         String subcommand = args[0].toLowerCase(Locale.ROOT);
         if (!PetPlugin.getInstance().isPacketEventsAvailable()
-                && !subcommand.equals("help")) {
+                && !subcommand.equals("help")
+                && !subcommand.equals("reload")) {
             sendColoredMessage(sender, "&cPacketEvents 2.13.0 o superiore non è installato/attivo. Impossibile usare i pet.");
             return true;
         }
@@ -168,6 +174,7 @@ public final class PetCommand implements CommandExecutor, TabCompleter {
                     setLevelCommand(sender, Double.parseDouble(args[1]), target(args, 2));
                 }
                 case "level" -> showLevelCommand(sender, target(args, 1));
+                case "reload" -> reloadCommand(sender);
                 case "rename" -> {
                     if (!(sender instanceof Player player)) {
                         sendColoredMessage(sender, "&cIl comando rename può essere usato soltanto da un giocatore.");
@@ -193,7 +200,7 @@ public final class PetCommand implements CommandExecutor, TabCompleter {
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         if (args.length == 1) {
             return filterPrefix(List.of("help", "select", "remove", "update", "buy", "addlevel",
-                    "removelevel", "setlevel", "level", "rename"), args[0]);
+                    "removelevel", "setlevel", "level", "rename", "reload"), args[0]);
         }
         if (args.length == 2 && (args[0].equalsIgnoreCase("select") || args[0].equalsIgnoreCase("buy"))) {
             return filterPrefix(new ArrayList<>(getEnabledPetTypeNames()), args[1]);
@@ -245,8 +252,25 @@ public final class PetCommand implements CommandExecutor, TabCompleter {
         helpLines.add("&e/hpet setlevel <level> [player] &7- Set pet level");
         helpLines.add("&e/hpet level [player] &7- Show current pet level");
         helpLines.add("&e/hpet rename <nome> &7- Rinomina il pet attivo");
+        if (sender.hasPermission("pet.reload")) {
+            helpLines.add("&e/hpet reload &7- Ricarica completamente HPET");
+        }
 
         helpLines.forEach(line -> sendColoredMessage(sender, line));
+    }
+
+    private void reloadCommand(CommandSender sender) {
+        if (!sender.hasPermission("pet.reload")) {
+            sendColoredMessage(sender, "&cNon hai il permesso di ricaricare HPET.");
+            return;
+        }
+
+        sendColoredMessage(sender, "&eRicaricamento completo di HPET in corso...");
+        if (PetPlugin.getInstance().reloadAll()) {
+            sendColoredMessage(sender, "&aHPET ricaricato completamente.");
+        } else {
+            sendColoredMessage(sender, "&cImpossibile completare il reload di HPET. Controlla la console.");
+        }
     }
 
 

@@ -34,6 +34,26 @@ public final class PetGui implements Listener {
 
     public PetGui(PetPlugin plugin) {
         this.plugin = plugin;
+        Bukkit.getScheduler().runTaskTimer(plugin, this::refreshOpenPetMenus, 20L, 20L);
+    }
+
+    private void refreshOpenPetMenus() {
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            Inventory inventory = player.getOpenInventory().getTopInventory();
+            if (!(inventory.getHolder() instanceof PetHolder holder)) continue;
+
+            Set<String> activePetTypes = plugin.getApi().userPets(player).stream()
+                    .map(userPet -> userPet.getPetType().getName().toLowerCase(Locale.ROOT))
+                    .collect(Collectors.toSet());
+
+            for (Map.Entry<Integer, PetType> entry : holder.pets.entrySet()) {
+                if (!activePetTypes.contains(entry.getValue().getName().toLowerCase(Locale.ROOT))) continue;
+                PetType currentType = plugin.getApi().petType(entry.getValue().getName());
+                if (currentType == null) continue;
+                entry.setValue(currentType);
+                inventory.setItem(entry.getKey(), currentType.generateGuiIcon(player));
+            }
+        }
     }
 
     public void openHome(Player player) {

@@ -5,6 +5,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import it.heron.hpet.placeholders.PlaceholdersExtension;
 import me.clip.placeholderapi.PlaceholderAPI;
 import org.bukkit.OfflinePlayer;
+import it.heron.hpet.modules.pets.pettypes.PetType;
 
 public class PapiModule extends PluginHook {
 
@@ -21,6 +22,11 @@ public class PapiModule extends PluginHook {
 
     public String parsePlaceholders(OfflinePlayer player, String text) {
         return PlaceholderAPI.setPlaceholders(player, text);
+    }
+
+    public String parsePlaceholders(OfflinePlayer player, String text, PetType petType) {
+        return extension.withPetContext(
+                petType, () -> PlaceholderAPI.setPlaceholders(player, text));
     }
 
     @Override
