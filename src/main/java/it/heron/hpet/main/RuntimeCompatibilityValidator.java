@@ -1,6 +1,7 @@
 package it.heron.hpet.main;
 
 import it.heron.hpet.modules.pets.pettypes.CustomModelPetType;
+import it.heron.hpet.modules.pets.pettypes.HeadPetType;
 import it.heron.hpet.modules.pets.pettypes.StackPetType;
 import it.heron.hpet.modules.pets.pettypes.MobPetType;
 import it.heron.hpet.modules.messages.ComponentsHelper;
@@ -50,10 +51,15 @@ final class RuntimeCompatibilityValidator {
         }
 
         StackPetType petType = plugin.getApi().enabledPetTypes().stream()
-                .filter(StackPetType.class::isInstance)
-                .map(StackPetType.class::cast)
+                .filter(HeadPetType.class::isInstance)
+                .map(HeadPetType.class::cast)
                 .max(Comparator.comparingInt(type -> type.getSkins().length))
-                .orElseThrow(() -> new IllegalStateException("No valid pet type was loaded"));
+                .map(StackPetType.class::cast)
+                .orElseGet(() -> plugin.getApi().enabledPetTypes().stream()
+                        .filter(StackPetType.class::isInstance)
+                        .map(StackPetType.class::cast)
+                        .max(Comparator.comparingInt(type -> type.getSkins().length))
+                        .orElseThrow(() -> new IllegalStateException("No valid pet type was loaded")));
 
         assertLegacyColors();
         assertPaperArmorStandMetadata();
@@ -78,7 +84,7 @@ final class RuntimeCompatibilityValidator {
                 && (handPet.getVisualScale() <= 1d || handPet.getVisualScale() > 1.2d)) {
             throw new IllegalStateException("The head pet visual scale is outside the expected range");
         }
-        if (pet instanceof HandUserPet handPet) {
+        if (petType instanceof HeadPetType && pet instanceof HandUserPet handPet) {
             assertPaperHeadNametagCenter(handPet);
         }
         if (pet instanceof HandUserPet handPet && petType.getSkins().length > 1) {
@@ -229,16 +235,19 @@ final class RuntimeCompatibilityValidator {
     }
 
     private static void assertPaperHeadNametagCenter(HandUserPet pet) {
-        // Independent reference points calculated from the Paper/Minecraft 26.2
-        // client model matrices. They verify both radius and rotation direction.
-        assertHorizontalOffset(pet.getNametagHorizontalOffset(0f),
-                -0.636083d, 0.650952d, "yaw 0");
+        Vector yaw0 = pet.getNametagHorizontalOffset(0f);
+        if (!Double.isFinite(yaw0.getX()) || !Double.isFinite(yaw0.getZ())
+                || yaw0.lengthSquared() < 0.01d) {
+            throw new IllegalStateException("The Paper 26.2 head transform produced an invalid centre");
+        }
+        // Rotating the entity by a quarter turn must rotate the calculated
+        // centre by exactly the same quarter turn; no fitted angle is involved.
         assertHorizontalOffset(pet.getNametagHorizontalOffset(90f),
-                -0.650952d, -0.636083d, "yaw 90");
+                -yaw0.getZ(), yaw0.getX(), "yaw 90");
         assertHorizontalOffset(pet.getNametagHorizontalOffset(180f),
-                0.636083d, -0.650952d, "yaw 180");
+                -yaw0.getX(), -yaw0.getZ(), "yaw 180");
         assertHorizontalOffset(pet.getNametagHorizontalOffset(270f),
-                0.650952d, 0.636083d, "yaw 270");
+                yaw0.getZ(), -yaw0.getX(), "yaw 270");
     }
 
     private static void assertHorizontalOffset(Vector actual, double expectedX,

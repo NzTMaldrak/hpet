@@ -4,6 +4,7 @@ import com.github.retrooper.packetevents.protocol.entity.data.EntityData;
 import com.github.retrooper.packetevents.protocol.entity.data.EntityDataTypes;
 import com.github.retrooper.packetevents.util.Vector3f;
 import it.heron.hpet.modules.pets.userpets.fakeentities.armorstandmetadatahandlers.AbstractMetadataHandler;
+import it.heron.hpet.modules.pets.userpets.fakeentities.ArmorStandHeadTransform;
 import net.kyori.adventure.text.Component;
 
 public class Metadata1_21 extends AbstractMetadataHandler {
@@ -44,6 +45,10 @@ public class Metadata1_21 extends AbstractMetadataHandler {
 
     @Override
     protected Vector3f armPose() {
-        return new Vector3f(-44.0F, 34.0F, 1.0F);
+        return new Vector3f(
+                ArmorStandHeadTransform.RIGHT_ARM_X_DEGREES,
+                ArmorStandHeadTransform.RIGHT_ARM_Y_DEGREES,
+                ArmorStandHeadTransform.RIGHT_ARM_Z_DEGREES
+        );
     }
 }
