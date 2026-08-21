@@ -25,6 +25,10 @@ public interface PetType {
     Vector getNametagRelativeLocation();
     void setNametagRelativeLocation(Vector vector);
 
+    double getDistance();
+    double getNameHeight();
+    float getYaw();
+
     Double getPrice();
     void setPrice(Double price);
 

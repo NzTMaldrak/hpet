@@ -13,7 +13,7 @@ public class CustomModelPetType extends StackPetType {
     @Override
     protected ItemStack makeSkin(String skinName) {
         // format: material customModelData
-        String[] splitted = skinName.split(" ");
+        String[] splitted = skinName.split("[ :]+", 2);
         Material material = Material.valueOf(splitted[0]);
         int customModelData = Integer.valueOf(splitted[1]);
         return new ModelDataStack(material, null, null, customModelData).get();

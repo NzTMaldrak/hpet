@@ -1,6 +1,7 @@
 package it.heron.hpet.modules.pets.pettypes;
 
 import it.heron.hpet.main.PetPlugin;
+import it.heron.hpet.modules.messages.ComponentsHelper;
 import it.heron.hpet.utils.heads.CustomHead;
 import it.heron.hpet.utils.heads.HDBHead;
 import it.heron.hpet.utils.heads.PlayerHead;
@@ -11,6 +12,10 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.List;
+import java.util.ArrayList;
+import net.kyori.adventure.text.Component;
+import org.bukkit.Material;
+import org.bukkit.inventory.meta.ItemMeta;
 
 
 public abstract class StackPetType extends AbstractPetType {
@@ -30,7 +35,18 @@ public abstract class StackPetType extends AbstractPetType {
 
     @Override
     public ItemStack generateGuiIcon(Player viewer) {
-        return null;
+        ItemStack icon = skins.length == 0 || skins[0] == null
+                ? new ItemStack(Material.PAPER)
+                : skins[0].clone();
+        ItemMeta meta = icon.getItemMeta();
+        meta.displayName(getDisplayName() == null ? Component.text(getName()) : getDisplayName());
+        List<Component> lore = new ArrayList<>();
+        if (getDescription() != null) lore.addAll(getDescription());
+        lore.add(Component.empty());
+        lore.add(ComponentsHelper.simpleParse("&aClicca per selezionare"));
+        meta.lore(lore);
+        icon.setItemMeta(meta);
+        return icon;
     }
 
     @Override

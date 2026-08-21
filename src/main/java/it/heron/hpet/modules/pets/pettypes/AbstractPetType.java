@@ -41,16 +41,25 @@ public abstract class AbstractPetType implements PetType {
     @Getter @Setter
     private @NonNull String animationName = "glide";
 
-    private float yaw = 200f;
-    private double distance = 0d;
+    @Getter
+    // Additional per-pet rotation. The original renderer always adds its fixed 200 degrees.
+    private float yaw = 0f;
+    @Getter
+    private double distance = 1d;
+    @Getter
+    private double nameHeight = 1d;
 
     public AbstractPetType(YamlConfiguration configuration, @NonNull String key) {
         this.configuration = configuration;
         this.name = key;
-        this.displayName = ComponentsHelper.simpleParse(configuration.getString(absolutePath("displayname")));
+        String configuredDisplayName = configuration.getString(absolutePath("displayname"), key);
+        this.displayName = ComponentsHelper.simpleParse(configuredDisplayName.strip());
         this.description = ComponentsHelper.listParse(configuration.getStringList(absolutePath("description")));
 
-        loadVector(null, relativeLocation);
+        this.nameHeight = configuration.getDouble(absolutePath("y"), nameHeight);
+        relativeLocation.setX(configuration.getDouble(absolutePath("x"), 0));
+        relativeLocation.setY(nameHeight - 1d);
+        relativeLocation.setZ(configuration.getDouble(absolutePath("z"), 0));
         loadVector("nametag", nametagRelativeLocation);
         this.price = getNullableDouble("price");
         this.animationName = configuration.getString(absolutePath("animation"), animationName);
@@ -75,9 +84,9 @@ public abstract class AbstractPetType implements PetType {
 
     protected void loadVector(String subpath, Vector def) {
         String path = absolutePath(subpath);
-        double x = configuration.getDouble(path, def.getX());
-        double y = configuration.getDouble(path, def.getY());
-        double z = configuration.getDouble(path, def.getZ());
+        double x = configuration.getDouble(path + ".x", def.getX());
+        double y = configuration.getDouble(path + ".y", def.getY());
+        double z = configuration.getDouble(path + ".z", def.getZ());
         def.setX(x);
         def.setY(y);
         def.setZ(z);
