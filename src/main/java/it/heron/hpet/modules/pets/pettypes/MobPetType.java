@@ -1,6 +1,5 @@
 package it.heron.hpet.modules.pets.pettypes;
 
-import it.heron.hpet.modules.messages.ComponentsHelper;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Material;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -39,7 +38,7 @@ public final class MobPetType extends AbstractPetType {
         List<Component> lore = new ArrayList<>();
         if (getDescription() != null) lore.addAll(renderGuiComponents(viewer, getDescription()));
         lore.add(Component.empty());
-        lore.add(ComponentsHelper.simpleParse("&aClicca per selezionare"));
+        lore.add(localizedGuiComponent(viewer, "gui.pet.click_to_select"));
         meta.lore(lore);
         icon.setItemMeta(meta);
         return icon;

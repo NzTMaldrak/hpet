@@ -1,9 +1,61 @@
+# File completo della lingua italiana di HPET.
+# Puoi modificare liberamente ogni testo e colore.
+# Colori classici: &0-&f | Formati: &l grassetto, &o corsivo, &n sottolineato, &m barrato, &r reset.
+# Non rimuovere i placeholder tra parentesi graffe, ad esempio {pet}, {player}, {level} e {sender}.
 messages:
   gui:
     name: "&a&lPETS"
     select:
       can: "&a&lCLICCA PER SELEZIONARE"
       cannot: "&c&lPET BLOCCATO!"
+      success: "&aPet selezionato: &f{pet}"
+    remove:
+      success: "&aPet rimosso: &f{pet}"
+    home:
+      title: "&6HPET - Categorie"
+      all_pets:
+        name: "&6&lTutti i pet"
+        lore:
+          - "&7Mostra tutti i pet disponibili"
+      rename:
+        name: "&a&lRinomina il pet"
+        lore:
+          - "&7Clicca e scrivi in chat"
+          - "&7il nuovo nome del pet"
+      respawn:
+        name: "&a&lRigenera il pet"
+        lore:
+          - "&7Ricrea il pet attualmente attivo"
+      remove:
+        name: "&c&lRimuovi il pet"
+        lore:
+          - "&7Rimuove il pet attualmente attivo"
+    pets:
+      title: "&6HPET - {group}"
+      all_title: "Tutti i pet"
+      back:
+        name: "&c&lTorna alle categorie"
+        lore: []
+      previous_page:
+        name: "&c&lPagina precedente"
+        lore: []
+      next_page:
+        name: "&a&lPagina successiva"
+        lore: []
+    category:
+      name: "&a&l{group}"
+      lore:
+        - ""
+        - "&7{count} pet configurati"
+        - "&a&lClicca per aprire"
+    pet:
+      click_to_select: "&aClicca per selezionare"
+    error:
+      locked: "&cNon hai sbloccato questo pet."
+      packet_events: "&cPacketEvents 2.13.0 o superiore non è attivo."
+      spawn_failed: "&cImpossibile generare {pet}. Controlla la console."
+      rename_permission: "&cNon hai il permesso di rinominare il pet."
+      remove_permission: "&cNon hai il permesso di rimuovere il pet."
   level: "&eLivello: "
   levelup:
     - "&a&m------------------------------------"
@@ -16,39 +68,134 @@ messages:
   leveltype:
     JUMP: "SALTO"
     WALK: "CAMMINA"
-    KILL: "UCCISIOONI"
+    KILL: "UCCISIONI"
     MINE: "SCAVO"
     DEATHS: "MORTI"
-    PLAYER_KILLS: "PLAYER UCCISI"
+    PLAYER_KILLS: "GIOCATORI UCCISI"
     CAKE_EATEN: "FETTE DI TORTA MANGIATE"
   group:
-    open: "&a&lApri questo gruppo!"
+    open: "&a&lApri questa categoria!"
   pet:
     rename:
-      help: "&ePer rinominare il tuo pet digita /pet rename <nuovo nome>"
+      help: "&eClicca su Rinomina pet e scrivi il nuovo nome in chat."
     price: "&7Prezzo: &e&l€"
     buy:
-      noprice: "&eQuesto Pet non ha prezzo!"
-      notenough: "&cTi servono più soldi!"
+      noprice: "&eQuesto pet non è acquistabile!"
+      notenough: "&cNon hai abbastanza denaro!"
       permissioncommand: "lp user %player% permission set pet.use.%petname%"
-      bought: "&aHai comprato un nuovo Pet!"
-    respawn: "&aPet respawnato!"
+      bought: "&aHai acquistato un nuovo pet!"
+    respawn: "&aPet rigenerato!"
     remove: "&cPet rimosso!"
-    spawned: "&aPet spawnato!"
+    spawned: "&aPet generato!"
     glow:
       add: "&aIl tuo pet brilla!"
       remove: "&cHai rimosso la brillantezza dal Pet!"
     trail:
-      add: "&aHai creato una trail!"
-      remove: "&cHai rimosso la trail!"
+      add: "&aHai attivato una scia!"
+      remove: "&cHai rimosso la scia!"
     particle:
       add: "&aHai aggiunto delle particelle!"
       remove: "&cIl tuo pet ora non ha particelle!"
       invalid: "&cQuesta particella non esiste!"
   error:
     alreadybought: "&cHai già comprato questo pet!"
-    invalid: "&cArgomento invalido!"
-    nosel: "&cPet non selezionato"
+    invalid: "&cArgomento non valido!"
+    nosel: "&cNessun pet selezionato."
+    specify_target: "&cDalla console devi specificare un giocatore."
+    no_active_pet: "&c{player} non ha nessun pet attivo."
+    no_permission: "&cNon hai il permesso &e{permission}&c."
+    packet_events: "&cPacketEvents 2.13.0 o superiore non è installato o attivo. Impossibile usare i pet."
+    invalid_number: "&cInserisci un numero valido."
     noperm:
       command: "&cNon hai il permesso!"
       use: "&cNon puoi usare questo Pet!"
+  command:
+    hpet:
+      main:
+        player: "&aApertura del menu dei pet..."
+        console: "&eUsa /hpet help per visualizzare i comandi disponibili."
+      select:
+        error:
+          not_found: "&cIl pet '{petType}' non esiste."
+          failed: "&cNon è stato possibile selezionare il pet '{petType}' per {player}."
+        success:
+          self: "&aPet selezionato correttamente."
+          other: "&aHai selezionato il pet '{petType}' per {player}."
+          received: "&a{sender} ha selezionato un pet per te."
+      rename:
+        only_player: "&cIl comando rename può essere usato soltanto da un giocatore."
+        usage: "&eUsa: &c/hpet rename <nuovo nome>"
+        no_permission: "&cNon hai il permesso di rinominare il pet."
+        empty: "&cIl nome del pet non può essere vuoto."
+        success: "&aPet rinominato in: &r{name}"
+        chat_prompt: "&eScrivi in chat il nuovo nome del pet. Digita &cannulla &eper uscire."
+        cancelled: "&eRinomina del pet annullata."
+        expired: "&cTempo scaduto: rinomina del pet annullata."
+      help:
+        header: "&6&lComandi HPET:"
+        help: "&e/hpet help &7- Mostra questo elenco"
+        select: "&e/hpet select <pet> [giocatore] &7- Seleziona un pet"
+        remove: "&e/hpet remove [giocatore] &7- Rimuove il pet attivo"
+        update: "&e/hpet update [giocatore] &7- Rigenera il pet attivo"
+        buy: "&e/hpet buy <pet> [giocatore] &7- Acquista un pet"
+        addlevel: "&e/hpet addlevel <quantità> [giocatore] &7- Aggiunge livelli"
+        removelevel: "&e/hpet removelevel <quantità> [giocatore] &7- Rimuove livelli"
+        setlevel: "&e/hpet setlevel <livello> [giocatore] &7- Imposta il livello"
+        level: "&e/hpet level [giocatore] &7- Mostra il livello"
+        rename: "&e/hpet rename <nome> &7- Rinomina il pet attivo"
+        reload: "&e/hpet reload &7- Ricarica completamente HPET"
+      reload:
+        no_permission: "&cNon hai il permesso di ricaricare HPET."
+        start: "&eRicaricamento completo di HPET in corso..."
+        success: "&aHPET ricaricato completamente."
+        failed: "&cImpossibile completare il reload di HPET. Controlla la console."
+      remove:
+        success:
+          self: "&aPet rimosso correttamente."
+          other: "&aHai rimosso il pet di {player}."
+          received: "&e{sender} ha rimosso il tuo pet."
+      update:
+        error:
+          failed: "&cNon è stato possibile rigenerare il pet di {player}."
+        success:
+          self: "&aPet rigenerato correttamente."
+          other: "&aHai rigenerato il pet di {player}."
+          received: "&a{sender} ha rigenerato il tuo pet."
+      buy:
+        error:
+          not_found: "&cIl pet '{petType}' non esiste."
+          failed: "&cNon è stato possibile acquistare il pet '{petType}' per {player}."
+          no_price: "&cQuesto pet non può essere acquistato."
+          not_enough_money: "&cNon hai abbastanza denaro per acquistare '{petType}'."
+          already_owned: "&c{player} possiede già il pet '{petType}'."
+        wip: "&eAcquisto del pet '{petType}' per {player}..."
+        success:
+          self: "&aHai acquistato il pet '{petType}'."
+          other: "&aHai acquistato il pet '{petType}' per {player}."
+          received: "&a{sender} ha acquistato il pet '{petType}' per te."
+      level:
+        add:
+          error:
+            invalid_amount: "&cLa quantità deve essere maggiore di zero."
+          success:
+            self: "&aHai aggiunto {amount} livelli. Nuovo livello: {level}."
+            other: "&aHai aggiunto {amount} livelli al pet di {player}. Nuovo livello: {level}."
+            received: "&a{sender} ha aggiunto {amount} livelli al tuo pet. Nuovo livello: {level}."
+        remove:
+          error:
+            invalid_amount: "&cLa quantità deve essere maggiore di zero."
+          success:
+            self: "&aHai rimosso {amount} livelli. Nuovo livello: {level}."
+            other: "&aHai rimosso {amount} livelli dal pet di {player}. Nuovo livello: {level}."
+            received: "&e{sender} ha rimosso {amount} livelli dal tuo pet. Nuovo livello: {level}."
+        set:
+          error:
+            negative_level: "&cIl livello non può essere negativo."
+          success:
+            self: "&aLivello del pet impostato a {level}."
+            other: "&aLivello del pet di {player} impostato a {level}."
+            received: "&a{sender} ha impostato il livello del tuo pet a {level}."
+        show:
+          self: "&eIl livello attuale del tuo pet è {level}."
+          other: "&eIl livello attuale del pet di {player} è {level}."
+          received: "&e{sender} ha controllato il livello del tuo pet: {level}."

@@ -41,35 +41,30 @@ public final class PetCommand implements CommandExecutor, TabCompleter {
     }
 
     private MessagesHandler getMessagesHandler() {
-        MessagesHandler handler = messagesHandler;
-        if (handler == null) {
-            synchronized(this) {
-                handler = messagesHandler;
-                if (handler == null) {
-                    handler = (MessagesHandler) PetPlugin.getInstance().getModulesHandler().moduleByName("Messages");
-                    messagesHandler = handler;
-                }
-            }
-        }
-        return handler;
+        MessagesHandler current = (MessagesHandler) PetPlugin.getInstance()
+                .getModulesHandler().moduleByName("Messages");
+        if (current != null) messagesHandler = current;
+        return current == null ? messagesHandler : current;
     }
 
     // --- Helper methods for Suggestions ---
 
-    private Collection<String> getEnabledPetTypeNames() {
+    private Collection<String> getEnabledPetTypeNames(CommandSender sender) {
         if (petAPI == null) return List.of();
         return petAPI.enabledPetTypes().stream()
+                .filter(type -> !(sender instanceof Player player)
+                        || (type.canSee(player) && type.isUnlocked(player)))
                 .map(PetType::getName)
                 .collect(Collectors.toList());
     }
 
     private List<String> suggestPetTypes(ArgumentSuggestionEvent event) {
-        return new ArrayList<>(getEnabledPetTypeNames());
+        return new ArrayList<>(petAPI.enabledPetTypes().stream().map(PetType::getName).toList());
     }
 
     private List<String> suggestBuyablePetTypes(ArgumentSuggestionEvent event) {
         // TODO: Implement logic to only suggest pet types the sender doesn't own yet and/or can afford.
-        return new ArrayList<>(getEnabledPetTypeNames());
+        return new ArrayList<>(petAPI.enabledPetTypes().stream().map(PetType::getName).toList());
     }
 
     // --- Helper methods for Command Logic ---
@@ -86,11 +81,10 @@ public final class PetCommand implements CommandExecutor, TabCompleter {
         }
 
         if (sender instanceof Player) {
-            // MessagesHandler handles default player placeholders ({player}, {pet}, {level})
-            messagesHandler.sendMessage((Player) sender, messageSubpath);
+            handler.sendMessage((Player) sender, messageSubpath, placeholders);
         } else {
             // Console sender needs manual placeholder replacement
-            String rawMsg = messagesHandler.getRawString(messageSubpath);
+            String rawMsg = handler.getRawString(messageSubpath);
             if (rawMsg != null) {
                 String consoleMsg = rawMsg.replace("{player}", "Console"); // Default console placeholder
                 if (placeholders != null) {
@@ -126,6 +120,17 @@ public final class PetCommand implements CommandExecutor, TabCompleter {
         return userPet;
     }
 
+    private boolean requirePermission(CommandSender sender, String permission) {
+        if (sender.hasPermission(permission)) return true;
+        sendMessageToSender(sender, "error.no_permission", Map.of("{permission}", permission));
+        return false;
+    }
+
+    private boolean requireTargetPermission(
+            CommandSender sender, Player target, String selfPermission, String othersPermission) {
+        return requirePermission(sender, sender.equals(target) ? selfPermission : othersPermission);
+    }
+
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (command.getName().equalsIgnoreCase("reload")) {
@@ -146,7 +151,7 @@ public final class PetCommand implements CommandExecutor, TabCompleter {
         if (!PetPlugin.getInstance().isPacketEventsAvailable()
                 && !subcommand.equals("help")
                 && !subcommand.equals("reload")) {
-            sendColoredMessage(sender, "&cPacketEvents 2.13.0 o superiore non è installato/attivo. Impossibile usare i pet.");
+            sendMessageToSender(sender, "error.packet_events", null);
             return true;
         }
         try {
@@ -177,9 +182,9 @@ public final class PetCommand implements CommandExecutor, TabCompleter {
                 case "reload" -> reloadCommand(sender);
                 case "rename" -> {
                     if (!(sender instanceof Player player)) {
-                        sendColoredMessage(sender, "&cIl comando rename può essere usato soltanto da un giocatore.");
+                        sendMessageToSender(sender, "command.hpet.rename.only_player", null);
                     } else if (args.length < 2) {
-                        sendColoredMessage(sender, "&eUsa: &c/hpet rename <nuovo nome>");
+                        sendMessageToSender(sender, "command.hpet.rename.usage", null);
                     } else {
                         renamePetCommand(player, String.join(" ", Arrays.copyOfRange(args, 1, args.length)));
                     }
@@ -187,7 +192,7 @@ public final class PetCommand implements CommandExecutor, TabCompleter {
                 default -> sendHelpMessage(sender);
             }
         } catch (NumberFormatException ignored) {
-            sendColoredMessage(sender, "&cInserisci un numero valido.");
+            sendMessageToSender(sender, "error.invalid_number", null);
         }
         return true;
     }
@@ -199,11 +204,22 @@ public final class PetCommand implements CommandExecutor, TabCompleter {
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         if (args.length == 1) {
-            return filterPrefix(List.of("help", "select", "remove", "update", "buy", "addlevel",
-                    "removelevel", "setlevel", "level", "rename", "reload"), args[0]);
+            List<String> subcommands = new ArrayList<>(List.of("help"));
+            if (sender.hasPermission("pet.remove")) subcommands.add("remove");
+            if (sender.hasPermission("pet.update")) subcommands.add("update");
+            if (sender.hasPermission("pet.buy")) subcommands.add("buy");
+            if (sender.hasPermission("pet.addlevel")) subcommands.add("addlevel");
+            if (sender.hasPermission("pet.removelevel")) subcommands.add("removelevel");
+            if (sender.hasPermission("pet.setlevel")) subcommands.add("setlevel");
+            if (sender.hasPermission("pet.level")) subcommands.add("level");
+            if (sender.hasPermission("pet.rename")) subcommands.add("rename");
+            if (sender.hasPermission("pet.reload")) subcommands.add("reload");
+            if (!(sender instanceof Player player) || petAPI.enabledPetTypes().stream()
+                    .anyMatch(type -> type.isUnlocked(player))) subcommands.add("select");
+            return filterPrefix(subcommands, args[0]);
         }
         if (args.length == 2 && (args[0].equalsIgnoreCase("select") || args[0].equalsIgnoreCase("buy"))) {
-            return filterPrefix(new ArrayList<>(getEnabledPetTypeNames()), args[1]);
+            return filterPrefix(new ArrayList<>(getEnabledPetTypeNames(sender)), args[1]);
         }
         return List.of();
     }
@@ -241,35 +257,36 @@ public final class PetCommand implements CommandExecutor, TabCompleter {
 
     private void sendHelpMessage(CommandSender sender) {
         List<String> helpLines = new ArrayList<>();
-        helpLines.add("&6&lHPET Commands:");
-        helpLines.add("&e/hpet help &7- Shows this help message");
-        helpLines.add("&e/hpet select <petType> [player] &7- Select a pet");
-        helpLines.add("&e/hpet remove [player] &7- Remove current pet");
-        helpLines.add("&e/hpet update [player] &7- Respawn your pet");
-        helpLines.add("&e/hpet buy <petType> [player] &7- Buy a pet");
-        helpLines.add("&e/hpet addlevel <amount> [player] &7- Add pet levels");
-        helpLines.add("&e/hpet removelevel <amount> [player] &7- Remove pet levels");
-        helpLines.add("&e/hpet setlevel <level> [player] &7- Set pet level");
-        helpLines.add("&e/hpet level [player] &7- Show current pet level");
-        helpLines.add("&e/hpet rename <nome> &7- Rinomina il pet attivo");
+        helpLines.add("command.hpet.help.header");
+        helpLines.add("command.hpet.help.help");
+        if (!(sender instanceof Player player) || petAPI.enabledPetTypes().stream().anyMatch(type -> type.isUnlocked(player)))
+            helpLines.add("command.hpet.help.select");
+        if (sender.hasPermission("pet.remove")) helpLines.add("command.hpet.help.remove");
+        if (sender.hasPermission("pet.update")) helpLines.add("command.hpet.help.update");
+        if (sender.hasPermission("pet.buy")) helpLines.add("command.hpet.help.buy");
+        if (sender.hasPermission("pet.addlevel")) helpLines.add("command.hpet.help.addlevel");
+        if (sender.hasPermission("pet.removelevel")) helpLines.add("command.hpet.help.removelevel");
+        if (sender.hasPermission("pet.setlevel")) helpLines.add("command.hpet.help.setlevel");
+        if (sender.hasPermission("pet.level")) helpLines.add("command.hpet.help.level");
+        if (sender.hasPermission("pet.rename")) helpLines.add("command.hpet.help.rename");
         if (sender.hasPermission("pet.reload")) {
-            helpLines.add("&e/hpet reload &7- Ricarica completamente HPET");
+            helpLines.add("command.hpet.help.reload");
         }
 
-        helpLines.forEach(line -> sendColoredMessage(sender, line));
+        helpLines.forEach(path -> sendMessageToSender(sender, path, null));
     }
 
     private void reloadCommand(CommandSender sender) {
         if (!sender.hasPermission("pet.reload")) {
-            sendColoredMessage(sender, "&cNon hai il permesso di ricaricare HPET.");
+            sendMessageToSender(sender, "command.hpet.reload.no_permission", null);
             return;
         }
 
-        sendColoredMessage(sender, "&eRicaricamento completo di HPET in corso...");
+        sendMessageToSender(sender, "command.hpet.reload.start", null);
         if (PetPlugin.getInstance().reloadAll()) {
-            sendColoredMessage(sender, "&aHPET ricaricato completamente.");
+            sendMessageToSender(sender, "command.hpet.reload.success", null);
         } else {
-            sendColoredMessage(sender, "&cImpossibile completare il reload di HPET. Controlla la console.");
+            sendMessageToSender(sender, "command.hpet.reload.failed", null);
         }
     }
 
@@ -294,6 +311,11 @@ public final class PetCommand implements CommandExecutor, TabCompleter {
             sendMessageToSender(sender, "command.hpet.select.error.not_found", placeholders);
             return;
         }
+        if (sender.equals(targetPlayer)) {
+            if (!requirePermission(sender, "pet.use." + type.getName())) return;
+        } else if (!requirePermission(sender, "pet.select.others")) {
+            return;
+        }
 
         UserPet selectedPet = petAPI.selectPet(targetPlayer, type);
 
@@ -306,7 +328,8 @@ public final class PetCommand implements CommandExecutor, TabCompleter {
                 senderPlaceholders.put("{petType}", type.getName());
                 sendMessageToSender(sender, "command.hpet.select.success.other", senderPlaceholders);
 
-                messagesHandler.sendMessage(targetPlayer, "command.hpet.select.success.received");
+                messagesHandler.sendMessage(targetPlayer, "command.hpet.select.success.received",
+                        Map.of("{sender}", sender.getName(), "{petType}", type.getName()));
             }
         } else {
             Map<String, String> placeholders = new HashMap<>();
@@ -318,7 +341,7 @@ public final class PetCommand implements CommandExecutor, TabCompleter {
 
     public void renamePetCommand(Player player, String requestedName) {
         if (!player.hasPermission("pet.rename")) {
-            sendColoredMessage(player, "&cNon hai il permesso di rinominare il pet.");
+            sendMessageToSender(player, "command.hpet.rename.no_permission", null);
             return;
         }
         UserPet userPet = getUserPet(player, player);
@@ -335,7 +358,7 @@ public final class PetCommand implements CommandExecutor, TabCompleter {
             name = name.replaceAll("(?i)" + Pattern.quote(invalid), "*");
         }
         if (ChatColor.stripColor(ChatColor.translateAlternateColorCodes('&', name)).isBlank()) {
-            sendColoredMessage(player, "&cIl nome del pet non può essere vuoto.");
+            sendMessageToSender(player, "command.hpet.rename.empty", null);
             return;
         }
 
@@ -347,7 +370,7 @@ public final class PetCommand implements CommandExecutor, TabCompleter {
         lastPet.setPetName(name);
         lastPet.save();
         player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1f, 1f);
-        sendColoredMessage(player, "&aPet rinominato in: &r" + name);
+        sendMessageToSender(player, "command.hpet.rename.success", Map.of("{name}", name));
     }
 
     private String truncateVisibleLegacyName(String input, int maxVisibleLength) {
@@ -378,6 +401,7 @@ public final class PetCommand implements CommandExecutor, TabCompleter {
     public void removePetCommand(CommandSender sender, Player target) {
         Player targetPlayer = getTargetPlayer(sender, target);
         if (targetPlayer == null) return;
+        if (!requireTargetPermission(sender, targetPlayer, "pet.remove", "pet.remove.others")) return;
 
         UserPet userPet = getUserPet(sender, targetPlayer);
         if (userPet == null) return;
@@ -391,7 +415,8 @@ public final class PetCommand implements CommandExecutor, TabCompleter {
             senderPlaceholders.put("{player}", targetPlayer.getName());
             sendMessageToSender(sender, "command.hpet.remove.success.other", senderPlaceholders);
 
-            messagesHandler.sendMessage(targetPlayer, "command.hpet.remove.success.received");
+            messagesHandler.sendMessage(targetPlayer, "command.hpet.remove.success.received",
+                    Map.of("{sender}", sender.getName()));
         }
     }
 
@@ -407,6 +432,7 @@ public final class PetCommand implements CommandExecutor, TabCompleter {
     public void updatePetCommand(CommandSender sender, Player target) {
         Player targetPlayer = getTargetPlayer(sender, target);
         if (targetPlayer == null) return;
+        if (!requireTargetPermission(sender, targetPlayer, "pet.update", "pet.update.others")) return;
 
         UserPet userPet = getUserPet(sender, targetPlayer);
         if (userPet == null) return;
@@ -423,7 +449,8 @@ public final class PetCommand implements CommandExecutor, TabCompleter {
                 senderPlaceholders.put("{player}", targetPlayer.getName());
                 sendMessageToSender(sender, "command.hpet.update.success.other", senderPlaceholders);
 
-                messagesHandler.sendMessage(targetPlayer, "command.hpet.update.success.received");
+                messagesHandler.sendMessage(targetPlayer, "command.hpet.update.success.received",
+                        Map.of("{sender}", sender.getName()));
             }
         } else {
             Map<String, String> placeholders = new HashMap<>();
@@ -444,6 +471,7 @@ public final class PetCommand implements CommandExecutor, TabCompleter {
     public void buyPetCommand(CommandSender sender, String petType, Player target) {
         Player targetPlayer = getTargetPlayer(sender, target);
         if (targetPlayer == null) return;
+        if (!requireTargetPermission(sender, targetPlayer, "pet.buy", "pet.buy.others")) return;
 
         PetType type = petAPI.petType(petType);
         if (type == null) {
@@ -477,7 +505,8 @@ public final class PetCommand implements CommandExecutor, TabCompleter {
                 senderPlaceholders.put("{player}", targetPlayer.getName());
                 sendMessageToSender(sender, "command.hpet.buy.success.other", senderPlaceholders);
                 // MessagesHandler buildDictionary should include sender name as {player}
-                messagesHandler.sendMessage(targetPlayer, "command.hpet.buy.success.received");
+                messagesHandler.sendMessage(targetPlayer, "command.hpet.buy.success.received",
+                        Map.of("{sender}", sender.getName(), "{petType}", petType));
             }
         } else {
             Map<String, String> failedPlaceholders = new HashMap<>();
@@ -499,6 +528,7 @@ public final class PetCommand implements CommandExecutor, TabCompleter {
     public void addLevelCommand(CommandSender sender, double amount, Player target) {
         Player targetPlayer = getTargetPlayer(sender, target);
         if (targetPlayer == null) return;
+        if (!requireTargetPermission(sender, targetPlayer, "pet.addlevel", "pet.addlevel.others")) return;
 
         UserPet userPet = getUserPet(sender, targetPlayer);
         if (userPet == null) return;
@@ -523,7 +553,9 @@ public final class PetCommand implements CommandExecutor, TabCompleter {
             levelPlaceholders.put("{player}", targetPlayer.getName());
             sendMessageToSender(sender, "command.hpet.level.add.success.other", levelPlaceholders);
 
-            messagesHandler.sendMessage(targetPlayer, "command.hpet.level.add.success.received");
+            messagesHandler.sendMessage(targetPlayer, "command.hpet.level.add.success.received",
+                    Map.of("{sender}", sender.getName(), "{amount}", String.valueOf(amount),
+                            "{level}", String.valueOf(newLevel)));
         }
     }
 
@@ -540,6 +572,7 @@ public final class PetCommand implements CommandExecutor, TabCompleter {
     public void removeLevelCommand(CommandSender sender, double amount, Player target) {
         Player targetPlayer = getTargetPlayer(sender, target);
         if (targetPlayer == null) return;
+        if (!requireTargetPermission(sender, targetPlayer, "pet.removelevel", "pet.removelevel.others")) return;
 
         UserPet userPet = getUserPet(sender, targetPlayer);
         if (userPet == null) return;
@@ -563,7 +596,9 @@ public final class PetCommand implements CommandExecutor, TabCompleter {
             levelPlaceholders.put("{player}", targetPlayer.getName());
             sendMessageToSender(sender, "command.hpet.level.remove.success.other", levelPlaceholders);
 
-            messagesHandler.sendMessage(targetPlayer, "command.hpet.level.remove.success.received");
+            messagesHandler.sendMessage(targetPlayer, "command.hpet.level.remove.success.received",
+                    Map.of("{sender}", sender.getName(), "{amount}", String.valueOf(amount),
+                            "{level}", String.valueOf(newLevel)));
         }
     }
 
@@ -580,6 +615,7 @@ public final class PetCommand implements CommandExecutor, TabCompleter {
     public void setLevelCommand(CommandSender sender, double level, Player target) {
         Player targetPlayer = getTargetPlayer(sender, target);
         if (targetPlayer == null) return;
+        if (!requireTargetPermission(sender, targetPlayer, "pet.setlevel", "pet.setlevel.others")) return;
 
         UserPet userPet = getUserPet(sender, targetPlayer);
         if (userPet == null) return;
@@ -600,7 +636,8 @@ public final class PetCommand implements CommandExecutor, TabCompleter {
             levelPlaceholders.put("{player}", targetPlayer.getName());
             sendMessageToSender(sender, "command.hpet.level.set.success.other", levelPlaceholders);
 
-            messagesHandler.sendMessage(targetPlayer, "command.hpet.level.set.success.received");
+            messagesHandler.sendMessage(targetPlayer, "command.hpet.level.set.success.received",
+                    Map.of("{sender}", sender.getName(), "{level}", String.valueOf(level)));
         }
     }
 
@@ -616,6 +653,7 @@ public final class PetCommand implements CommandExecutor, TabCompleter {
     public void showLevelCommand(CommandSender sender, Player target) {
         Player targetPlayer = getTargetPlayer(sender, target);
         if (targetPlayer == null) return;
+        if (!requireTargetPermission(sender, targetPlayer, "pet.level", "pet.level.others")) return;
 
         UserPet userPet = getUserPet(sender, targetPlayer);
         if (userPet == null) return;
@@ -632,7 +670,8 @@ public final class PetCommand implements CommandExecutor, TabCompleter {
             levelPlaceholders.put("{player}", targetPlayer.getName());
             sendMessageToSender(sender, "command.hpet.level.show.other", levelPlaceholders);
 
-            messagesHandler.sendMessage(targetPlayer, "command.hpet.level.show.received");
+            messagesHandler.sendMessage(targetPlayer, "command.hpet.level.show.received",
+                    Map.of("{sender}", sender.getName(), "{level}", String.valueOf(level)));
         }
     }
 }

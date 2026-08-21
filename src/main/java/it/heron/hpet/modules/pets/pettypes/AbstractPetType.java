@@ -8,6 +8,7 @@ import it.heron.hpet.modules.abilities.AbilityParser;
 import it.heron.hpet.modules.abstracts.Module;
 import it.heron.hpet.modules.hooks.PapiModule;
 import it.heron.hpet.modules.messages.ComponentsHelper;
+import it.heron.hpet.modules.messages.MessagesHandler;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
@@ -137,6 +138,12 @@ public abstract class AbstractPetType implements PetType {
         return components.stream()
                 .map(component -> renderGuiComponent(viewer, component))
                 .toList();
+    }
+
+    protected Component localizedGuiComponent(Player viewer, String path) {
+        Module module = PetPlugin.getInstance().getModulesHandler().moduleByName("Messages");
+        if (!(module instanceof MessagesHandler messages)) return Component.empty();
+        return messages.component(viewer, path, java.util.Map.of("{pet}", getName()));
     }
 
 }

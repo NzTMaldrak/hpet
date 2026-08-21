@@ -22,6 +22,9 @@ import lombok.Getter;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandMap;
+import org.bukkit.command.PluginCommand;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -49,6 +52,9 @@ public class PetPlugin extends JavaPlugin {
     private PetGui petGui;
 
     @Getter
+    private PetCommand petCommand;
+
+    @Getter
     private List<String> disabledWorlds = new ArrayList<>();
 
     @Getter
@@ -57,6 +63,8 @@ public class PetPlugin extends JavaPlugin {
     private YamlConfiguration config;
 
     private boolean reloading;
+
+    private final Set<String> registeredCommandAliases = new LinkedHashSet<>();
 
     @Getter
     private final ModulesHandler modulesHandler = new ModulesHandler(this);
@@ -155,17 +163,73 @@ public class PetPlugin extends JavaPlugin {
 
         // Initialize commands
         try {
-            PetCommand petCommand = new PetCommand();
-            Objects.requireNonNull(getCommand("hpet"), "Command hpet is missing from plugin.yml")
-                    .setExecutor(petCommand);
-            Objects.requireNonNull(getCommand("hpet"))
-                    .setTabCompleter(petCommand);
+            petCommand = new PetCommand();
+            PluginCommand hpetCommand = Objects.requireNonNull(
+                    getCommand("hpet"), "Command hpet is missing from plugin.yml");
+            hpetCommand.setExecutor(petCommand);
+            hpetCommand.setTabCompleter(petCommand);
             Objects.requireNonNull(getCommand("reload"), "Command reload is missing from plugin.yml")
                     .setExecutor(petCommand);
+            configureCommandAliases(hpetCommand);
         } catch (Exception e) {
             getLogger().severe("Failed to register commands: " + e.getMessage());
             e.printStackTrace();
         }
+    }
+
+    private void configureCommandAliases(PluginCommand hpetCommand) {
+        CommandMap commandMap = Bukkit.getServer().getCommandMap();
+        Map<String, Command> knownCommands = commandMap.getKnownCommands();
+        String namespace = getName().toLowerCase(Locale.ROOT) + ":";
+
+        for (String alias : registeredCommandAliases) {
+            knownCommands.remove(alias, hpetCommand);
+            knownCommands.remove(namespace + alias, hpetCommand);
+        }
+        registeredCommandAliases.clear();
+
+        List<String> configured = new ArrayList<>(getConfig().getStringList("alias"));
+        if (configured.isEmpty()) configured.addAll(getConfig().getStringList("aliases"));
+        boolean enabled = getConfig().contains("useAliases")
+                ? getConfig().getBoolean("useAliases")
+                : !configured.isEmpty();
+
+        if (enabled) {
+            for (String rawAlias : configured) {
+                String alias = normalizeAlias(rawAlias);
+                if (alias == null || alias.equals("hpet") || alias.equals("reload")) continue;
+
+                Command existing = knownCommands.get(alias);
+                if (existing != null && existing != hpetCommand) {
+                    getLogger().warning("Cannot register /" + alias
+                            + " as an HPET alias because another command already uses it.");
+                    continue;
+                }
+
+                knownCommands.put(alias, hpetCommand);
+                knownCommands.putIfAbsent(namespace + alias, hpetCommand);
+                registeredCommandAliases.add(alias);
+            }
+        }
+
+        hpetCommand.setAliases(new ArrayList<>(registeredCommandAliases));
+        Bukkit.getOnlinePlayers().forEach(Player::updateCommands);
+        if (!registeredCommandAliases.isEmpty()) {
+            getLogger().info("Registered HPET aliases: " + registeredCommandAliases.stream()
+                    .map(alias -> "/" + alias)
+                    .collect(java.util.stream.Collectors.joining(", ")));
+        }
+    }
+
+    private String normalizeAlias(String rawAlias) {
+        if (rawAlias == null) return null;
+        String alias = rawAlias.strip().toLowerCase(Locale.ROOT);
+        if (alias.startsWith("/")) alias = alias.substring(1);
+        if (alias.isBlank() || !alias.matches("[a-z0-9_-]+")) {
+            getLogger().warning("Ignoring invalid HPET command alias: " + rawAlias);
+            return null;
+        }
+        return alias;
     }
 
 

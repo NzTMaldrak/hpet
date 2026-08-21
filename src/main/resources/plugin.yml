@@ -17,10 +17,40 @@ permissions:
   pet.version:
     default: true
   pet.command:
-    default: true
+    default: false
   pet.rename:
-    default: true
+    default: false
   pet.rename.color:
     default: op
   pet.reload:
+    default: op
+  pet.remove:
+    default: false
+  pet.remove.others:
+    default: op
+  pet.update:
+    default: false
+  pet.update.others:
+    default: op
+  pet.level:
+    default: false
+  pet.level.others:
+    default: op
+  pet.buy:
+    default: false
+  pet.buy.others:
+    default: op
+  pet.select.others:
+    default: op
+  pet.addlevel:
+    default: op
+  pet.addlevel.others:
+    default: op
+  pet.removelevel:
+    default: op
+  pet.removelevel.others:
+    default: op
+  pet.setlevel:
+    default: op
+  pet.setlevel.others:
     default: op

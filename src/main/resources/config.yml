@@ -1,4 +1,9 @@
-locale: "en"
+# Tutte le scritte, i colori e le GUI sono modificabili in messages.yml.
+
+# Optional aliases for /hpet. They are updated by /hpet reload.
+useAliases: false
+alias:
+  - pet
 
 disabledWorlds:
   - nopetsworld

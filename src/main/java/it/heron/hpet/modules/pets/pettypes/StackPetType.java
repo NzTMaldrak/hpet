@@ -1,7 +1,6 @@
 package it.heron.hpet.modules.pets.pettypes;
 
 import it.heron.hpet.main.PetPlugin;
-import it.heron.hpet.modules.messages.ComponentsHelper;
 import it.heron.hpet.utils.heads.CustomHead;
 import it.heron.hpet.utils.heads.HDBHead;
 import it.heron.hpet.utils.heads.PlayerHead;
@@ -44,7 +43,7 @@ public abstract class StackPetType extends AbstractPetType {
         List<Component> lore = new ArrayList<>();
         if (getDescription() != null) lore.addAll(renderGuiComponents(viewer, getDescription()));
         lore.add(Component.empty());
-        lore.add(ComponentsHelper.simpleParse("&aClicca per selezionare"));
+        lore.add(localizedGuiComponent(viewer, "gui.pet.click_to_select"));
         meta.lore(lore);
         icon.setItemMeta(meta);
         return icon;

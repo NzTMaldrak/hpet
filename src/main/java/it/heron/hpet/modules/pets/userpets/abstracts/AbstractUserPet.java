@@ -13,6 +13,7 @@ import lombok.Setter;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
 
 import java.util.UUID;
@@ -50,6 +51,7 @@ public abstract class AbstractUserPet implements UserPet {
 
     private boolean currentVisibilityState = true; // current visibility state, shouldn't be used externally
     private int movementTicks = 0;
+    private int permissionCheckTicks = 0;
 
     public AbstractUserPet(@NonNull PetType petType, @NonNull Entity owner, int level) {
         this.petType = petType;
@@ -97,6 +99,20 @@ public abstract class AbstractUserPet implements UserPet {
     public void tick() {
         Entity ownerEntity = Bukkit.getEntity(this.owner);
         if (ownerEntity == null || !ownerEntity.isValid()) return;
+        if (ownerEntity instanceof Player player) {
+            if (!player.hasPermission("pet.command")) {
+                PetPlugin.getApi().removePet(this);
+                return;
+            }
+            permissionCheckTicks++;
+            if (permissionCheckTicks >= 20) {
+                permissionCheckTicks = 0;
+                if (!petType.isUnlocked(player)) {
+                    PetPlugin.getApi().removePet(this);
+                    return;
+                }
+            }
+        }
         InvisibilityHandler handler = (InvisibilityHandler) PetPlugin.getInstance().getModulesHandler().moduleByName("Vanish");
         this.vanished = handler.isInvisible(ownerEntity);
 

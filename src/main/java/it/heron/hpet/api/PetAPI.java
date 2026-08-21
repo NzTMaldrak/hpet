@@ -126,10 +126,11 @@ public class PetAPI {
     }
 
     public void spawnDatabasePet(Player owner) {
+        if (!owner.hasPermission("pet.command")) return;
         LastPet lastPet = LastPet.load(owner.getUniqueId());
         if (lastPet == null || lastPet.getPetType() == null) return;
         PetType type = petType(lastPet.getPetType());
-        if (type != null) selectPet(owner, type);
+        if (type != null && type.isUnlocked(owner)) selectPet(owner, type);
     }
 
 }

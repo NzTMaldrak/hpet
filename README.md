@@ -165,6 +165,8 @@ useAliases: false # enable aliases for /hpet command
 alias:
   - mpets # you can insert multiple aliases
 ```
+Alias changes are applied with `/hpet reload`. An alias already owned by another
+server command is skipped and reported in the console.<br>
 Default aliases are /hpet, /pet<br>
 
 /hpet - main command, opens gui, pet.command<br>

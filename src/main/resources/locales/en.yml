@@ -5,6 +5,54 @@ messages:
     select:
       can: "<green><bold>CLICK TO SELECT</bold></green>"
       cannot: "<red><bold>PET LOCKED!</bold></red>"
+      success: "<green>Pet selected: <white>{pet}</white></green>"
+    remove:
+      success: "<green>Pet removed: <white>{pet}</white></green>"
+    home:
+      title: "<gold>HPET - Categories</gold>"
+      all_pets:
+        name: "<gold><bold>All pets</bold></gold>"
+        lore:
+          - "<gray>Show every available pet</gray>"
+      rename:
+        name: "<green><bold>Rename pet</bold></green>"
+        lore:
+          - "<gray>Click and type the new</gray>"
+          - "<gray>pet name in chat</gray>"
+      respawn:
+        name: "<green><bold>Respawn pet</bold></green>"
+        lore:
+          - "<gray>Respawn the active pet</gray>"
+      remove:
+        name: "<red><bold>Remove pet</bold></red>"
+        lore:
+          - "<gray>Remove the active pet</gray>"
+    pets:
+      title: "<gold>HPET - {group}</gold>"
+      all_title: "All pets"
+      back:
+        name: "<red><bold>Back to categories</bold></red>"
+        lore: []
+      previous_page:
+        name: "<red><bold>Previous page</bold></red>"
+        lore: []
+      next_page:
+        name: "<green><bold>Next page</bold></green>"
+        lore: []
+    category:
+      name: "<green><bold>{group}</bold></green>"
+      lore:
+        - ""
+        - "<gray>{count} configured pets</gray>"
+        - "<green><bold>Click to open</bold></green>"
+    pet:
+      click_to_select: "<green>Click to select</green>"
+    error:
+      locked: "<red>You have not unlocked this pet.</red>"
+      packet_events: "<red>PacketEvents 2.13.0 or newer is not active.</red>"
+      spawn_failed: "<red>Could not spawn {pet}. Check the console.</red>"
+      rename_permission: "<red>You cannot rename pets.</red>"
+      remove_permission: "<red>You cannot remove pets.</red>"
 
   # Error messages used by helper methods
   error:
@@ -12,6 +60,9 @@ messages:
     specify_target: "<red>You must specify a target player from console.</red>"
     # Used in getUserPet helper
     no_active_pet: "<red><player> does not have an active pet.</red>" # {player} is the target player's name
+    no_permission: "&cYou do not have permission &e{permission}&c."
+    packet_events: "&cPacketEvents 2.13.0 or newer is not installed or active. Pets cannot be used."
+    invalid_number: "&cEnter a valid number."
 
   # Command-specific messages
   command:
@@ -35,6 +86,36 @@ messages:
           # {sender} is command sender's name (Requires MessagesHandler modification)
           # {pet} is target's newly selected pet name (from buildDictionary)
           received: "<green><sender> has selected the '<pet>' pet for you.</green>"
+
+      rename:
+        only_player: "&cThe rename command can only be used by a player."
+        usage: "&eUse: &c/hpet rename <new name>"
+        no_permission: "&cYou cannot rename pets."
+        empty: "&cThe pet name cannot be empty."
+        success: "&aPet renamed to: &r{name}"
+        chat_prompt: "<yellow>Type the new pet name in chat. Type <red>cancel</red> to exit.</yellow>"
+        cancelled: "<yellow>Pet rename cancelled.</yellow>"
+        expired: "<red>Time expired: pet rename cancelled.</red>"
+
+      help:
+        header: "&6&lHPET Commands:"
+        help: "&e/hpet help &7- Show this list"
+        select: "&e/hpet select <pet> [player] &7- Select a pet"
+        remove: "&e/hpet remove [player] &7- Remove the active pet"
+        update: "&e/hpet update [player] &7- Respawn the active pet"
+        buy: "&e/hpet buy <pet> [player] &7- Buy a pet"
+        addlevel: "&e/hpet addlevel <amount> [player] &7- Add levels"
+        removelevel: "&e/hpet removelevel <amount> [player] &7- Remove levels"
+        setlevel: "&e/hpet setlevel <level> [player] &7- Set the level"
+        level: "&e/hpet level [player] &7- Show the level"
+        rename: "&e/hpet rename <name> &7- Rename the active pet"
+        reload: "&e/hpet reload &7- Fully reload HPET"
+
+      reload:
+        no_permission: "&cYou cannot reload HPET."
+        start: "&eReloading all HPET resources..."
+        success: "&aHPET fully reloaded."
+        failed: "&cCould not reload HPET. Check the console."
 
       remove:
         success:
