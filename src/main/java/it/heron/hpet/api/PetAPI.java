@@ -127,7 +127,9 @@ public class PetAPI {
 
     public void spawnDatabasePet(Player owner) {
         LastPet lastPet = LastPet.load(owner.getUniqueId());
-        selectPet(owner, lastPet.getPetType());
+        if (lastPet == null || lastPet.getPetType() == null) return;
+        PetType type = petType(lastPet.getPetType());
+        if (type != null) selectPet(owner, type);
     }
 
 }

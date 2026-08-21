@@ -22,7 +22,8 @@ public abstract class AbstractDatabase implements Database {
             TableUtils.createTableIfNotExists(connectionSource, LastPet.class);
             TableUtils.createTableIfNotExists(connectionSource, PetLevel.class);
         } catch (Exception e) {
-            e.printStackTrace();
+            connectionSource = null;
+            throw new IllegalStateException("Could not initialize the HPET database", e);
         }
     }
 

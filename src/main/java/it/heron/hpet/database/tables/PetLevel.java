@@ -54,4 +54,16 @@ public class PetLevel {
             return null;
         }
     }
+
+    public static PetLevel loadOrCreate(UUID owner, String petType) {
+        PetLevel petLevel = load(owner, petType);
+        if (petLevel != null) return petLevel;
+
+        petLevel = new PetLevel();
+        petLevel.setOwner(owner);
+        petLevel.setPetType(petType);
+        petLevel.setLevel(0);
+        petLevel.save();
+        return petLevel;
+    }
 }

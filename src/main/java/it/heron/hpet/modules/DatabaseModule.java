@@ -7,6 +7,8 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.Dictionary;
 import java.util.Hashtable;
+import java.util.Locale;
+import java.util.logging.Level;
 
 public class DatabaseModule extends DefaultInstanceModule {
 
@@ -43,12 +45,41 @@ public class DatabaseModule extends DefaultInstanceModule {
     }
 
     private void loadDatabase() {
-        String databaseType = plugin.getConfig().getString("database.type").toLowerCase();
+        String configuredType = plugin.getConfig().getString("database.type");
+        if (configuredType == null && plugin.getConfig().isString("database")) {
+            configuredType = plugin.getConfig().getString("database");
+        }
+        String databaseType = configuredType == null
+                ? "sqlite"
+                : configuredType.trim().toLowerCase(Locale.ROOT);
+        if (databaseType.equals("postgres") || databaseType.equals("postgresql")) {
+            databaseType = "postgre";
+        }
+
         this.database = databaseDictionary().get(databaseType);
-        this.database.load();
+        if (this.database == null) {
+            plugin.getLogger().warning("Unknown database type '" + configuredType
+                    + "'; using the local SQLite database instead.");
+            this.database = new SQLiteDatabase(plugin);
+        }
+
+        try {
+            this.database.load();
+        } catch (RuntimeException exception) {
+            if (this.database instanceof SQLiteDatabase) throw exception;
+            plugin.getLogger().log(Level.SEVERE,
+                    "Could not connect to the configured " + databaseType
+                            + " database; HPET will use local SQLite instead.", exception);
+            this.database = new SQLiteDatabase(plugin);
+            this.database.load();
+        }
+
+        if (this.database.getConnectionSource() == null) {
+            throw new IllegalStateException("HPET database initialized without a connection");
+        }
     }
 
     private void unloadDatabase() {
-        this.database.unload();
+        if (this.database != null) this.database.unload();
     }
 }
