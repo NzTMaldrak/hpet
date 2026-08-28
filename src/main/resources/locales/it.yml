@@ -76,6 +76,7 @@ messages:
   group:
     open: "&a&lApri questa categoria!"
   pet:
+    disabled_world: "&cIl tuo pet e le sue abilita sono stati disattivati entrando nel mondo &e{world}&c."
     rename:
       help: "&eClicca su Rinomina pet e scrivi il nuovo nome in chat."
     price: "&7Prezzo: &e&l€"
@@ -106,6 +107,7 @@ messages:
     no_permission: "&cNon hai il permesso &e{permission}&c."
     packet_events: "&cPacketEvents 2.13.0 o superiore non è installato o attivo. Impossibile usare i pet."
     invalid_number: "&cInserisci un numero valido."
+    world_disabled: "&cNon puoi attivare pet nel mondo &e{world}&c."
     noperm:
       command: "&cNon hai il permesso!"
       use: "&cNon puoi usare questo Pet!"

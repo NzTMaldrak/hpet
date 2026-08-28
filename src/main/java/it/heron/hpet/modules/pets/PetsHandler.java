@@ -2,6 +2,7 @@ package it.heron.hpet.modules.pets;
 
 import it.heron.hpet.database.tables.PetLevel;
 import it.heron.hpet.database.tables.LastPet;
+import it.heron.hpet.database.tables.PetActivationState;
 import it.heron.hpet.main.PetPlugin;
 import it.heron.hpet.modules.abstracts.DefaultInstanceModule;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -66,6 +67,7 @@ public class PetsHandler extends DefaultInstanceModule {
         if (petType == null) {
             throw new IllegalArgumentException("Pet type cannot be null");
         }
+        if (!PetPlugin.getInstance().isPetWorldAllowed(entity.getWorld())) return null;
         PetLevel petLevel = PetLevel.loadOrCreate(entity.getUniqueId(), petType.getName());
         for (UserPet current : new HashSet<>(userPets(entity.getUniqueId()))) {
             removePet(current);
@@ -97,6 +99,7 @@ public class PetsHandler extends DefaultInstanceModule {
         lastPet.setPetType(petType.getName());
         lastPet.setPetName(rememberedName);
         lastPet.save();
+        PetActivationState.setActive(entity.getUniqueId(), true);
         return userPet;
     }
 

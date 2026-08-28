@@ -5,6 +5,8 @@ useAliases: false
 alias:
   - pet
 
+# Worlds where pets and their abilities are disabled (case-insensitive).
+# Nether and End remain enabled unless you explicitly add their world names here.
 disabledWorlds:
   - nopetsworld
 

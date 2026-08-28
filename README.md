@@ -20,6 +20,20 @@ You can install HPET following these steps:
 
 ## Configure HPET
 
+### World restrictions
+
+Pets and their abilities can be restricted by world in `config.yml`:
+
+```yaml
+disabledWorlds:
+  - resource_world
+```
+
+`disabledWorlds` blocks only the listed world names, case-insensitively; Nether and
+End remain enabled unless their names are explicitly listed. Entering a blocked
+world removes the active pet and cleans up its abilities; selection from commands,
+the GUI, the API and database restoration is also refused there.
+
 ### Create a Pet
 Your Pets must be configured in pets.yml file. And enabled via config. A Pet must have an **id**, a **displayname**, a **description** and at least **one skin**<br>
 This is an example of a valid base Pet:

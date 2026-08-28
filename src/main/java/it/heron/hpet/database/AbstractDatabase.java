@@ -7,6 +7,7 @@ import it.heron.hpet.database.tables.LastPet;
 import it.heron.hpet.database.tables.PetLevel;
 import it.heron.hpet.database.tables.DailyAbilityUsage;
 import it.heron.hpet.database.tables.BoughtPets;
+import it.heron.hpet.database.tables.PetActivationState;
 import lombok.Getter;
 
 public abstract class AbstractDatabase implements Database {
@@ -25,6 +26,7 @@ public abstract class AbstractDatabase implements Database {
             TableUtils.createTableIfNotExists(connectionSource, PetLevel.class);
             TableUtils.createTableIfNotExists(connectionSource, DailyAbilityUsage.class);
             TableUtils.createTableIfNotExists(connectionSource, BoughtPets.class);
+            TableUtils.createTableIfNotExists(connectionSource, PetActivationState.class);
         } catch (Exception e) {
             connectionSource = null;
             throw new IllegalStateException("Could not initialize the HPET database", e);

@@ -316,6 +316,11 @@ public final class PetCommand implements CommandExecutor, TabCompleter {
         } else if (!requirePermission(sender, "pet.select.others")) {
             return;
         }
+        if (!PetPlugin.getInstance().isPetWorldAllowed(targetPlayer.getWorld())) {
+            sendMessageToSender(sender, "error.world_disabled",
+                    Map.of("{world}", targetPlayer.getWorld().getName()));
+            return;
+        }
 
         UserPet selectedPet = petAPI.selectPet(targetPlayer, type);
 
@@ -406,7 +411,7 @@ public final class PetCommand implements CommandExecutor, TabCompleter {
         UserPet userPet = getUserPet(sender, targetPlayer);
         if (userPet == null) return;
 
-        petAPI.removePet(userPet);
+        petAPI.deselectPet(userPet);
 
         if (sender.equals(targetPlayer)) {
             sendMessageToSender(sender, "command.hpet.remove.success.self", null);

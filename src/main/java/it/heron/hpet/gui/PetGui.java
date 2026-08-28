@@ -178,6 +178,11 @@ public final class PetGui implements Listener {
             sendLocaleMessage(player, "gui.error.packet_events");
             return;
         }
+        if (!plugin.isPetWorldAllowed(player.getWorld())) {
+            sendLocaleMessage(player, "error.world_disabled",
+                    Map.of("{world}", player.getWorld().getName()));
+            return;
+        }
 
         try {
             plugin.getApi().selectPet(player, petType);
@@ -239,7 +244,7 @@ public final class PetGui implements Listener {
             return;
         }
         String petName = userPet.getPetType().getName();
-        plugin.getApi().removePet(userPet);
+        plugin.getApi().deselectPet(userPet);
         player.closeInventory();
         sendLocaleMessage(player, "gui.remove.success", Map.of("{pet}", petName));
     }

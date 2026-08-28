@@ -11,6 +11,7 @@
 package it.heron.hpet.api;
 
 import it.heron.hpet.database.tables.LastPet;
+import it.heron.hpet.database.tables.PetActivationState;
 import it.heron.hpet.modules.pets.PetsHandler;
 import it.heron.hpet.modules.pets.pettypes.PetType;
 import it.heron.hpet.modules.pets.userpets.abstracts.UserPet;
@@ -125,8 +126,20 @@ public class PetAPI {
         petsHandler.removePet(userPet);
     }
 
+    /**
+     * Removes the pet and clears the persisted selection, so it will not be
+     * restored on join, reload or server restart.
+     */
+    public void deselectPet(@NonNull UserPet userPet) {
+        UUID owner = userPet.getOwner();
+        removePet(userPet);
+        PetActivationState.setActive(owner, false);
+    }
+
     public void spawnDatabasePet(Player owner) {
         if (!owner.hasPermission("pet.command")) return;
+        if (!PetPlugin.getInstance().isPetWorldAllowed(owner.getWorld())) return;
+        if (!PetActivationState.isActive(owner.getUniqueId())) return;
         LastPet lastPet = LastPet.load(owner.getUniqueId());
         if (lastPet == null || lastPet.getPetType() == null) return;
         PetType type = petType(lastPet.getPetType());

@@ -20,6 +20,7 @@ import it.heron.hpet.modules.pets.userpets.fakeentities.armorstandmetadatahandle
 import it.heron.hpet.gui.PetGui;
 import lombok.Getter;
 import org.bukkit.Bukkit;
+import org.bukkit.World;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.command.Command;
@@ -145,6 +146,7 @@ public class PetPlugin extends JavaPlugin {
         saveResource("config.yml", false);
         saveResource("pets.yml", false);
         reloadConfig();
+        loadWorldRestrictions();
 
         // Load modules first
         this.modulesHandler.loadModules();
@@ -175,6 +177,22 @@ public class PetPlugin extends JavaPlugin {
             getLogger().severe("Failed to register commands: " + e.getMessage());
             e.printStackTrace();
         }
+    }
+
+    private void loadWorldRestrictions() {
+        this.disabledWorlds = getConfig().getStringList("disabledWorlds").stream()
+                .filter(Objects::nonNull)
+                .map(String::strip)
+                .filter(name -> !name.isEmpty())
+                .map(name -> name.toLowerCase(Locale.ROOT))
+                .distinct()
+                .toList();
+    }
+
+    /** Returns whether pets and their abilities may be active in this world. */
+    public boolean isPetWorldAllowed(World world) {
+        if (world == null) return false;
+        return !disabledWorlds.contains(world.getName().toLowerCase(Locale.ROOT));
     }
 
     private void configureCommandAliases(PluginCommand hpetCommand) {
