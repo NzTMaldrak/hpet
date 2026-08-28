@@ -3,7 +3,7 @@ version: '${version}'
 main: it.heron.hpet.main.PetPlugin
 api-version: '26.2'
 description: 'The packet based pet plugin'
-softdepend: [packetevents, PlaceholderAPI, HeadDatabase, Vault, SuperVanish, PremiumVanish, CMI, MythicMobs, ItemsAdder, ModelEngine, HeadDB]
+softdepend: [packetevents, PlaceholderAPI, HeadDatabase, Vault, SuperVanish, PremiumVanish, CMI, MythicMobs, ItemsAdder, ModelEngine, HeadDB, CombatLogX]
 commands:
   hpet:
     description: Main HPET command
@@ -54,3 +54,9 @@ permissions:
     default: op
   pet.setlevel.others:
     default: op
+  pet.bypass.combat:
+    description: Allows pets and their abilities to remain active during CombatLogX combat
+    default: false
+  pet.bypass.worlds:
+    description: Allows pets and their abilities inside worlds disabled by HPET
+    default: false

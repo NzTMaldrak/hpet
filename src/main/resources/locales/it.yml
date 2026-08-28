@@ -108,6 +108,7 @@ messages:
     packet_events: "&cPacketEvents 2.13.0 o superiore non è installato o attivo. Impossibile usare i pet."
     invalid_number: "&cInserisci un numero valido."
     world_disabled: "&cNon puoi attivare pet nel mondo &e{world}&c."
+    combat: "&cImpossibile generare pet sei in combat!"
     noperm:
       command: "&cNon hai il permesso!"
       use: "&cNon puoi usare questo Pet!"

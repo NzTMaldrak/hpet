@@ -5,6 +5,7 @@ import it.heron.hpet.database.tables.LastPet;
 import it.heron.hpet.database.tables.PetActivationState;
 import it.heron.hpet.main.PetPlugin;
 import it.heron.hpet.modules.abstracts.DefaultInstanceModule;
+import it.heron.hpet.modules.combat.CombatLogXHook;
 import org.bukkit.plugin.java.JavaPlugin;
 import it.heron.hpet.modules.pets.pettypes.CustomModelPetType;
 import it.heron.hpet.modules.pets.pettypes.HeadPetType;
@@ -19,6 +20,7 @@ import it.heron.hpet.modules.pets.userpets.workloads.WorkloadRunnable;
 import lombok.Getter;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.Player;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -67,7 +69,14 @@ public class PetsHandler extends DefaultInstanceModule {
         if (petType == null) {
             throw new IllegalArgumentException("Pet type cannot be null");
         }
-        if (!PetPlugin.getInstance().isPetWorldAllowed(entity.getWorld())) return null;
+        if (!PetPlugin.getInstance().isPetWorldAllowed(entity)) return null;
+        var combatModule = PetPlugin.getInstance().getModulesHandler().moduleByName("CombatLogX");
+        if (combatModule instanceof CombatLogXHook combatLogX
+                && combatLogX.isLoaded()
+                && entity instanceof Player player
+                && combatLogX.preventsPetSelection(player)) {
+            return null;
+        }
         PetLevel petLevel = PetLevel.loadOrCreate(entity.getUniqueId(), petType.getName());
         for (UserPet current : new HashSet<>(userPets(entity.getUniqueId()))) {
             removePet(current);

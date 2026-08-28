@@ -316,9 +316,15 @@ public final class PetCommand implements CommandExecutor, TabCompleter {
         } else if (!requirePermission(sender, "pet.select.others")) {
             return;
         }
-        if (!PetPlugin.getInstance().isPetWorldAllowed(targetPlayer.getWorld())) {
+        if (!PetPlugin.getInstance().isPetWorldAllowed(targetPlayer)) {
             sendMessageToSender(sender, "error.world_disabled",
                     Map.of("{world}", targetPlayer.getWorld().getName()));
+            return;
+        }
+        var combatModule = PetPlugin.getInstance().getModulesHandler().moduleByName("CombatLogX");
+        if (combatModule instanceof it.heron.hpet.modules.combat.CombatLogXHook combatLogX
+                && combatLogX.isLoaded() && combatLogX.preventsPetSelection(targetPlayer)) {
+            sendMessageToSender(sender, "error.combat", null);
             return;
         }
 

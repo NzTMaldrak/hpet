@@ -178,14 +178,24 @@ public final class PetGui implements Listener {
             sendLocaleMessage(player, "gui.error.packet_events");
             return;
         }
-        if (!plugin.isPetWorldAllowed(player.getWorld())) {
+        if (!plugin.isPetWorldAllowed(player)) {
             sendLocaleMessage(player, "error.world_disabled",
                     Map.of("{world}", player.getWorld().getName()));
             return;
         }
+        var combatModule = plugin.getModulesHandler().moduleByName("CombatLogX");
+        if (combatModule instanceof it.heron.hpet.modules.combat.CombatLogXHook combatLogX
+                && combatLogX.isLoaded() && combatLogX.preventsPetSelection(player)) {
+            sendLocaleMessage(player, "error.combat");
+            return;
+        }
 
         try {
-            plugin.getApi().selectPet(player, petType);
+            UserPet selectedPet = plugin.getApi().selectPet(player, petType);
+            if (selectedPet == null) {
+                sendLocaleMessage(player, "gui.error.spawn_failed", Map.of("{pet}", petType.getName()));
+                return;
+            }
             player.closeInventory();
             sendLocaleMessage(player, "gui.select.success", Map.of("{pet}", petType.getName()));
         } catch (RuntimeException exception) {

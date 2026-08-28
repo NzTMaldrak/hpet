@@ -195,6 +195,18 @@ public class PetPlugin extends JavaPlugin {
         return !disabledWorlds.contains(world.getName().toLowerCase(Locale.ROOT));
     }
 
+    /** Applies the disabled-world list while allowing an explicit player bypass. */
+    public boolean isPetWorldAllowed(Player player) {
+        return player != null
+                && (player.hasPermission("pet.bypass.worlds") || isPetWorldAllowed(player.getWorld()));
+    }
+
+    /** Applies the disabled-world list to any pet owner; only players may bypass it. */
+    public boolean isPetWorldAllowed(org.bukkit.entity.Entity owner) {
+        if (owner instanceof Player player) return isPetWorldAllowed(player);
+        return owner != null && isPetWorldAllowed(owner.getWorld());
+    }
+
     private void configureCommandAliases(PluginCommand hpetCommand) {
         CommandMap commandMap = Bukkit.getServer().getCommandMap();
         Map<String, Command> knownCommands = commandMap.getKnownCommands();

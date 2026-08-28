@@ -138,7 +138,7 @@ public class PetAPI {
 
     public void spawnDatabasePet(Player owner) {
         if (!owner.hasPermission("pet.command")) return;
-        if (!PetPlugin.getInstance().isPetWorldAllowed(owner.getWorld())) return;
+        if (!PetPlugin.getInstance().isPetWorldAllowed(owner)) return;
         if (!PetActivationState.isActive(owner.getUniqueId())) return;
         LastPet lastPet = LastPet.load(owner.getUniqueId());
         if (lastPet == null || lastPet.getPetType() == null) return;

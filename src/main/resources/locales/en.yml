@@ -63,6 +63,8 @@ messages:
     no_permission: "&cYou do not have permission &e{permission}&c."
     packet_events: "&cPacketEvents 2.13.0 or newer is not installed or active. Pets cannot be used."
     invalid_number: "&cEnter a valid number."
+    world_disabled: "&cYou cannot activate pets in world &e{world}&c."
+    combat: "&cYou cannot spawn a pet while in combat!"
 
   # Command-specific messages
   command:

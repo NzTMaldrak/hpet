@@ -101,7 +101,7 @@ public class AbilitiesHandler extends DefaultInstanceModule implements Listener 
     @EventHandler
     public void onWorldChange(PlayerChangedWorldEvent event) {
         Player player = event.getPlayer();
-        if (PetPlugin.getInstance().isPetWorldAllowed(player.getWorld())) return;
+        if (PetPlugin.getInstance().isPetWorldAllowed(player)) return;
 
         var activePets = petsHandler().userPets(player.getUniqueId());
         if (activePets.isEmpty()) return;

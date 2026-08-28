@@ -2,6 +2,7 @@ package it.heron.hpet.modules;
 
 import it.heron.hpet.modules.abilities.AbilitiesHandler;
 import it.heron.hpet.modules.abstracts.Module;
+import it.heron.hpet.modules.combat.CombatLogXHook;
 import it.heron.hpet.modules.exceptions.InvalidLoadException;
 import it.heron.hpet.modules.exceptions.RefusedLoadException;
 import it.heron.hpet.modules.hooks.HeadDatabaseModule;
@@ -55,6 +56,7 @@ public class ModulesHandler {
         modules.add(PetPlugin.getInstance().getPetTypesHandler());
         modules.add(new PetsHandler(plugin));
         modules.add(new AbilitiesHandler(plugin));
+        modules.add(new CombatLogXHook(plugin));
 
         modules.add(new PapiModule(plugin));
         modules.add(new VaultHook(plugin));

@@ -232,12 +232,6 @@
             <version>6.2.1</version> <!-- Check compatibility -->
             <scope>provided</scope>
         </dependency>
-        <dependency>
-            <groupId>com.github.timderspieler</groupId>
-            <artifactId>DeluxeCombat-API</artifactId>
-            <version>1.3.2</version> <!-- Verify compatibility -->
-            <scope>provided</scope>
-        </dependency>
 
         <!-- === Compile Dependencies (Bundled with your JAR or shaded) === -->
         <dependency>

@@ -40,6 +40,10 @@ nametags:
 
 vanish: true # Pets invisible while vanished
 
+# Remove the active pet and suspend its abilities during PvP combat tracked by CombatLogX.
+# The same pet is restored automatically when combat ends.
+combatLogXHook: true
+
 fix:
   yawCalibration: 0 # adjust if all pets look at wrong direction
   delay:
