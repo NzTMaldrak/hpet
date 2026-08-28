@@ -79,16 +79,24 @@ public abstract class AbstractUserPet implements UserPet {
 
     @Override
     public void spawn() {
-        if(isSpawned()) despawn();
+        if(isSpawned()) despawnVisuals();
+        spawnVisuals();
+        abilityRuntime.activate();
+    }
+
+    private void spawnVisuals() {
         onSpawn();
         nametag.show(getNametagLocation(location));
         if(this.id == UNSPAWNED_ID) throw new RuntimeException("There was an error while spawning the Pet");
-        abilityRuntime.activate();
     }
 
     @Override
     public void despawn() {
         abilityRuntime.deactivate();
+        despawnVisuals();
+    }
+
+    private void despawnVisuals() {
         if(!isSpawned()) return;
         nametag.hide();
         onDespawn();
@@ -182,10 +190,10 @@ public abstract class AbstractUserPet implements UserPet {
     private void applyVisibilityState(boolean state) {
         if(this.currentVisibilityState == state) return;
         if(state) {
-            spawn();
+            spawnVisuals();
             this.currentVisibilityState = true;
         } else {
-            despawn();
+            despawnVisuals();
             this.currentVisibilityState = false;
         }
     }
